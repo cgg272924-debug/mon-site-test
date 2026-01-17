@@ -512,6 +512,9 @@ def main() -> None:
     is_ci = bool(os.environ.get("GITHUB_ACTIONS"))
     force_scrape = bool(os.environ.get("FORCE_SCRAPE"))
     do_scrape = not is_ci or force_scrape
+    schedule_url: Optional[str] = None
+    standings_url: Optional[str] = None
+    team_stats_url: Optional[str] = None
     try:
         season_info = get_current_season_info(session)
         season_label = str(season_info["season_label"])
@@ -530,7 +533,7 @@ def main() -> None:
         df_standings = pd.DataFrame()
         df_team_stats = pd.DataFrame()
 
-        if do_scrape:
+        if do_scrape and schedule_url:
             if detect_new_matches(session, schedule_url):
                 df_matches = scrape_ligue1_matches(session, schedule_url, season_label)
                 df_standings = scrape_ligue1_standings(session, standings_url, season_label)
@@ -699,7 +702,7 @@ def main() -> None:
             "scraping/soccerdata_ligue1.py",
             "scraping/soccerdata_player_minutes_ol.py",
         ]
-        if do_scrape:
+        if do_scrape and schedule_url:
             if detect_new_matches(session, schedule_url):
                 run_scripts(scripts_scraping_soccerdata)
             else:
