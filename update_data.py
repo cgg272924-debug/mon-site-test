@@ -1,3 +1,5 @@
+import os
+import random
 import re
 import subprocess
 import sys
@@ -39,10 +41,13 @@ def get_session() -> requests.Session:
     session.headers.update(
         {
             "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) "
-                "Gecko/20100101 Firefox/117.0"
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
             ),
             "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Connection": "keep-alive",
         }
     )
     return session
@@ -53,14 +58,19 @@ def fetch_url(session: requests.Session, url: str, max_retries: int = 3, timeout
     for attempt in range(1, max_retries + 1):
         try:
             log(f"[HTTP] GET {url} (essai {attempt}/{max_retries})")
+            time.sleep(random.uniform(0.8, 2.0))
             response = session.get(url, timeout=timeout)
             if response.status_code == 200:
                 return response.text
             log(f"[HTTP] Statut {response.status_code} pour {url}")
+            if response.status_code in (403, 429):
+                sleep_s = random.uniform(3.0, 8.0) * attempt
+                log(f"[HTTP] Attente {sleep_s:.1f}s (rate-limit)")
+                time.sleep(sleep_s)
         except requests.RequestException as exc:
             last_error = exc
             log(f"[HTTP] Erreur réseau pour {url}: {exc}")
-        time.sleep(2 * attempt)
+        time.sleep(random.uniform(1.5, 4.0) * attempt)
     raise RuntimeError(f"Echec de téléchargement après {max_retries} essais: {url}") from last_error
 
 
@@ -112,6 +122,71 @@ def table_to_dataframe(table: BeautifulSoup) -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     return pd.DataFrame(rows)
+
+
+def safe_read_csv(path: Path, date_cols: Optional[Sequence[str]] = None) -> pd.DataFrame:
+    try:
+        if not path.exists():
+            return pd.DataFrame()
+        df = pd.read_csv(path)
+        if date_cols:
+            for c in date_cols:
+                if c in df.columns:
+                    df[c] = pd.to_datetime(df[c], errors="coerce")
+        return df
+    except Exception as e:
+        log(f"[AVERTISSEMENT] Lecture CSV échouée ({path}): {e}")
+        return pd.DataFrame()
+
+
+def latest_date_from_df(df: pd.DataFrame, col: str) -> Optional[date]:
+    if df.empty or col not in df.columns:
+        return None
+    try:
+        s = pd.to_datetime(df[col], errors="coerce").dropna()
+        if s.empty:
+            return None
+        return s.max().date()
+    except Exception:
+        return None
+
+
+def detect_new_matches(session: requests.Session, schedule_url: str) -> bool:
+    try:
+        html = fetch_url(session, schedule_url)
+        soup = BeautifulSoup(html, "lxml")
+        required_stats = {"date", "home_team", "away_team", "score"}
+        table = find_table_with_stats(soup, required_stats)
+        df = table_to_dataframe(table)
+        if df.empty or "date" not in df.columns:
+            return False
+        df = df[df["date"] != ""].copy()
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df = df[df["date"].notna()]
+        latest_remote = df["date"].max().date() if not df.empty else None
+    except Exception as exc:
+        log(f"[INFO] Impossible de détecter nouveaux matchs (FBref): {exc}")
+        return False
+
+    existing_paths = [
+        LIGUE1_MATCHES_PATH,
+        DATA_DIR / "raw" / "ligue1_matches_raw.csv",
+    ]
+    latest_local: Optional[date] = None
+    for p in existing_paths:
+        df_local = safe_read_csv(p, date_cols=["date"])
+        if not df_local.empty:
+            d = latest_date_from_df(df_local, "date")
+            if d and (latest_local is None or d > latest_local):
+                latest_local = d
+
+    if not latest_remote:
+        return False
+    if latest_local and latest_remote <= latest_local:
+        log(f"[INFO] Pas de nouveaux matchs (local: {latest_local}, remote: {latest_remote})")
+        return False
+    log(f"[INFO] Nouveaux matchs détectés (local: {latest_local}, remote: {latest_remote})")
+    return True
 
 
 def get_current_season_info(session: requests.Session) -> Dict[str, Optional[str]]:
@@ -434,6 +509,9 @@ def main() -> None:
     log("=== MISE A JOUR LIGUE 1 & OL (FBref) ===")
 
     session = get_session()
+    is_ci = bool(os.environ.get("GITHUB_ACTIONS"))
+    force_scrape = bool(os.environ.get("FORCE_SCRAPE"))
+    do_scrape = not is_ci or force_scrape
     try:
         season_info = get_current_season_info(session)
         season_label = str(season_info["season_label"])
@@ -448,9 +526,19 @@ def main() -> None:
         if team_stats_url:
             log(f"URL stats équipes: {team_stats_url}")
 
-        df_matches = scrape_ligue1_matches(session, schedule_url, season_label)
-        df_standings = scrape_ligue1_standings(session, standings_url, season_label)
-        df_team_stats = scrape_ligue1_team_stats(session, team_stats_url, season_label)
+        df_matches = pd.DataFrame()
+        df_standings = pd.DataFrame()
+        df_team_stats = pd.DataFrame()
+
+        if do_scrape:
+            if detect_new_matches(session, schedule_url):
+                df_matches = scrape_ligue1_matches(session, schedule_url, season_label)
+                df_standings = scrape_ligue1_standings(session, standings_url, season_label)
+                df_team_stats = scrape_ligue1_team_stats(session, team_stats_url, season_label)
+            else:
+                log("[INFO] Scraping direct ignoré: aucun nouveau match détecté")
+        else:
+            log("[INFO] Environnement CI détecté: scraping direct FBref désactivé")
     except Exception as exc:
         log(f"[AVERTISSEMENT] Scraping FBref direct indisponible: {exc}")
         df_matches = pd.DataFrame()
@@ -595,25 +683,32 @@ def main() -> None:
     print_summary(results)
 
     try:
-        run_scripts(
-            [
-                "scraping/soccerdata_ligue1.py",
-                "analysis/clean_matches.py",
-                "analysis/match_rating.py",
-                "analysis/match_score_final.py",
-                "scraping/soccerdata_player_minutes_ol.py",
-                "analysis/step0_create_match_key.py",
-                "analysis/step1_build_lineups.py",
-                "analysis/step2_generate_combos.py",
-                "analysis/step2_create_combos_per_match.py",
-                "analysis/step3_analyze_combos.py",
-                "analysis/analyze_best_combos.py",
-                "analysis/stepA_create_league1_standings.py",
-            ]
-        )
+        scripts_analysis = [
+            "analysis/clean_matches.py",
+            "analysis/match_rating.py",
+            "analysis/match_score_final.py",
+            "analysis/step0_create_match_key.py",
+            "analysis/step1_build_lineups.py",
+            "analysis/step2_generate_combos.py",
+            "analysis/step2_create_combos_per_match.py",
+            "analysis/step3_analyze_combos.py",
+            "analysis/analyze_best_combos.py",
+            "analysis/stepA_create_league1_standings.py",
+        ]
+        scripts_scraping_soccerdata = [
+            "scraping/soccerdata_ligue1.py",
+            "scraping/soccerdata_player_minutes_ol.py",
+        ]
+        if do_scrape:
+            if detect_new_matches(session, schedule_url):
+                run_scripts(scripts_scraping_soccerdata)
+            else:
+                log("[INFO] Scraping soccerdata ignoré: aucun nouveau match détecté")
+        run_scripts(scripts_analysis)
     except Exception as exc:
         log(f"[AVERTISSEMENT] Etape analyse interrompue: {exc}")
-        sys.exit(1)
+        # Pas d'arrêt: le pipeline ne doit pas crasher
+        pass
 
     try:
         run_git_pipeline()
