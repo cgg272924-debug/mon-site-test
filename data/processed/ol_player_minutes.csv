@@ -1,0 +1,249 @@
+season,game,game_id,team,player,pos,age,minutes_played,goals,assists,xg,xag
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Abner,LB,25-081,90,0,0,0.1,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Adam Karabec,FW,22-045,1,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Ainsley Maitland-Niles,"RW,RB",27-352,90,0,0,0.0,0.1
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Clinton Mata,CB,32-282,90,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Corentin Tolisso,AM,31-013,90,0,0,0.2,0.7
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Georges Mikautadze,FW,24-289,89,1,0,0.6,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Khalis Merah,RW,18-173,25,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Malick Fofana,LW,20-138,89,0,1,0.5,0.3
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Moussa Niakhate,CB,29-161,90,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Pavel Šulc,LW,24-230,1,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Rémy Descamps,GK,29-052,90,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Sael Kumbedi,RB,20-143,65,0,0,0.0,0.0
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Tanner Tessmann,DM,23-326,90,0,0,0.0,0.1
+2526,2025-08-16 Lens-Lyon,5959d3ad,Lyon,Tyler Morton,DM,22-289,90,0,0,0.0,0.1
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Abner,LB,25-088,73,0,0,0.1,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Adam Karabec,RW,22-052,17,1,0,0.8,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Afonso Moreira,LW,20-157,5,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Ainsley Maitland-Niles,RB,27-359,90,0,1,0.0,0.6
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Clinton Mata,CB,32-289,85,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Corentin Tolisso,AM,31-020,74,1,0,0.6,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Georges Mikautadze,FW,24-296,90,0,0,0.5,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Khalis Merah,AM,18-180,16,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Malick Fofana,LW,20-145,85,1,0,0.6,0.5
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Moussa Niakhate,CB,29-168,90,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Nicolás Tagliafico,LB,32-357,17,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Pavel Šulc,RW,24-237,73,0,1,0.2,0.6
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Ruben Kluivert,CB,24-094,5,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Rémy Descamps,GK,29-059,90,0,0,0.0,0.0
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Tanner Tessmann,DM,23-333,90,0,0,0.0,0.1
+2526,2025-08-23 Lyon-Metz,6df797c8,Lyon,Tyler Morton,DM,22-296,90,0,0,0.0,0.2
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Abner,"LB,LW",25-096,70,0,0,0.3,0.1
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Adam Karabec,RW,22-060,89,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Afonso Moreira,LW,20-165,20,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Ainsley Maitland-Niles,RB,28-002,90,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Clinton Mata,CB,32-297,90,0,0,0.1,0.1
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Corentin Tolisso,FW,31-028,90,0,0,0.6,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Khalis Merah,AM,18-188,70,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Malick Fofana,LW,20-153,52,0,0,0.1,0.3
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Moussa Niakhate,CB,29-176,90,0,0,0.1,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Nicolás Tagliafico,LB,33-000,38,0,0,0.2,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Pavel Šulc,AM,24-245,20,1,0,1.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Ruben Kluivert,RW,24-102,1,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Rémy Descamps,GK,29-067,90,0,0,0.0,0.0
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Tanner Tessmann,DM,23-341,90,0,0,0.3,0.2
+2526,2025-08-31 Lyon-Marseille,2e7d7c7d,Lyon,Tyler Morton,DM,22-304,90,0,0,0.0,0.2
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Abner,LB,25-110,90,0,0,0.0,0.1
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Adam Karabec,RW,22-074,66,0,0,0.6,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Ainsley Maitland-Niles,RB,28-016,90,0,1,0.0,0.4
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Clinton Mata,CB,32-311,90,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Corentin Tolisso,"AM,CM,DM",31-042,90,1,0,0.4,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Khalis Merah,FW,18-202,74,0,0,0.6,0.5
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Malick Fofana,LW,20-167,84,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Moussa Niakhate,CB,29-190,90,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Pavel Šulc,FW,24-259,16,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Rachid Ghezzal,"RW,RM",33-128,24,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Ruben Kluivert,CB,24-116,6,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Rémy Descamps,GK,29-081,90,0,0,0.0,0.0
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Tanner Tessmann,"DM,CM",23-355,90,0,0,0.1,0.4
+2526,2025-09-14 Rennes-Lyon,e8a7d6a7,Lyon,Tyler Morton,DM,22-318,74,0,0,0.0,0.1
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Adam Karabec,RW,22-079,89,0,0,0.0,0.1
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Afonso Moreira,LW,20-184,1,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Ainsley Maitland-Niles,RB,28-021,90,0,0,0.7,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Clinton Mata,CB,32-316,90,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Corentin Tolisso,AM,31-047,80,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Dominik Greif,GK,28-166,90,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Enzo Molebe,FW,18-001,10,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Khalis Merah,DM,18-207,63,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Malick Fofana,LW,20-172,89,0,0,0.5,0.7
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Martin Satriano,FW,24-211,80,0,0,0.3,0.1
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Mathys De Carvalho,DM,20-141,10,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Moussa Niakhate,CB,29-195,90,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Nicolás Tagliafico,LB,33-019,90,0,0,0.0,0.1
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Pavel Šulc,"DM,AM",24-264,27,0,0,0.1,0.4
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Rachid Ghezzal,RW,33-133,1,0,0,0.0,0.0
+2526,2025-09-19 Lyon-Angers,3d321db7,Lyon,Tanner Tessmann,DM,23-360,90,1,0,0.2,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Adam Karabec,RW,22-088,74,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Afonso Moreira,RW,20-193,16,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Ainsley Maitland-Niles,RB,28-030,90,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Clinton Mata,CB,32-325,90,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Corentin Tolisso,LM,31-056,90,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Dominik Greif,GK,28-175,90,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Khalis Merah,FW,18-216,74,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Malick Fofana,LW,20-181,89,0,0,0.1,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Mathys De Carvalho,LW,20-150,1,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Moussa Niakhate,CB,29-204,90,0,0,0.0,0.1
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Nicolás Tagliafico,LB,33-028,90,0,1,0.0,0.4
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Pavel Šulc,FW,24-273,16,0,0,0.1,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Tanner Tessmann,CM,24-004,90,0,0,0.0,0.0
+2526,2025-09-28 Lille-Lyon,ee984aec,Lyon,Tyler Morton,RM,22-332,90,1,0,0.3,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Adam Karabec,RW,22-095,77,0,0,0.0,0.2
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Afonso Moreira,RW,20-200,13,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Ainsley Maitland-Niles,RB,28-037,90,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Clinton Mata,CB,32-332,90,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Corentin Tolisso,AM,31-063,90,0,0,0.2,0.3
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Dominik Greif,GK,28-182,90,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Malick Fofana,LW,20-188,90,1,0,0.8,0.1
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Martin Satriano,FW,24-227,90,0,1,0.1,0.4
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Moussa Niakhate,CB,29-211,90,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Nicolás Tagliafico,LB,33-035,90,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Pavel Šulc,DM,24-280,1,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Tanner Tessmann,DM,24-011,89,0,0,0.0,0.0
+2526,2025-10-05 Lyon-Toulouse,60ecc64f,Lyon,Tyler Morton,DM,22-339,90,0,0,0.0,0.1
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Abner,LB,25-144,67,0,0,0.1,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Adam Karabec,RW,22-108,67,0,0,0.0,0.1
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Afonso Moreira,LW,20-213,14,0,0,0.0,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Ainsley Maitland-Niles,RB,28-050,90,0,0,0.8,0.7
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Clinton Mata,CB,32-345,76,0,0,0.0,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Corentin Tolisso,DM,31-076,90,0,0,0.5,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Dominik Greif,GK,28-195,90,0,0,0.0,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Malick Fofana,LW,20-201,76,0,0,0.1,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Martin Satriano,FW,24-240,90,0,0,0.2,0.1
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Moussa Niakhate,CB,29-224,14,0,0,0.0,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Nicolás Tagliafico,LB,33-048,23,0,0,0.6,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Pavel Šulc,AM,24-293,90,2,0,0.7,0.3
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Rachid Ghezzal,RW,33-162,23,0,0,0.0,0.0
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Ruben Kluivert,CB,24-150,90,0,1,0.0,0.1
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Tanner Tessmann,DM,24-024,14,0,0,0.1,0.1
+2526,2025-10-18 Nice-Lyon,b4b8f430,Lyon,Tyler Morton,DM,22-352,76,0,0,0.1,0.1
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Adam Karabec,RW,22-116,76,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Afonso Moreira,LW,20-221,23,1,0,0.1,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Ainsley Maitland-Niles,RB,28-058,90,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Clinton Mata,CB,32-353,90,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Corentin Tolisso,LM,31-084,90,0,0,0.8,0.1
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Dominik Greif,GK,28-203,90,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Malick Fofana,LW,20-209,67,0,0,0.1,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Martin Satriano,FW,24-248,14,0,0,0.3,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Mathys De Carvalho,CM,20-178,1,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Moussa Niakhate,CB,29-232,90,0,1,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Nicolás Tagliafico,LB,33-056,90,0,0,0.0,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Pavel Šulc,FW,24-301,76,0,0,0.4,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Rachid Ghezzal,RW,33-170,14,0,0,0.1,0.0
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Tanner Tessmann,CM,24-032,89,0,0,0.0,0.4
+2526,2025-10-26 Lyon-Strasbourg,cd22fe80,Lyon,Tyler Morton,RM,22-360,90,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Abner,LB,25-155,60,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Adam Karabec,RW,22-119,67,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Afonso Moreira,"LW,LM",20-224,73,0,2,0.0,1.1
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Ainsley Maitland-Niles,RB,28-061,90,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Clinton Mata,CB,32-356,90,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Corentin Tolisso,AM,31-087,67,1,0,0.1,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Dominik Greif,GK,28-206,90,0,1,0.0,0.1
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Hans Hateboer,CB,31-293,17,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Martin Satriano,FW,24-251,6,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Mathys De Carvalho,"DM,CM",20-181,90,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Moussa Niakhate,CB,29-235,90,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Nicolás Tagliafico,LB,33-059,23,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Pavel Šulc,FW,24-304,84,2,0,1.1,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Tanner Tessmann,CM,24-035,23,0,0,0.0,0.0
+2526,2025-10-29 Paris FC-Lyon,43400423,Lyon,Tyler Morton,"DM,CM,RM",22-363,90,0,0,0.1,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Afonso Moreira,LW,20-228,90,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Ainsley Maitland-Niles,RB,28-065,76,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Clinton Mata,CB,32-360,90,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Corentin Tolisso,"DM,AM",31-091,83,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Dominik Greif,GK,28-210,90,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Hans Hateboer,RB,31-297,7,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Martin Satriano,FW,24-255,75,0,0,0.0,0.1
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Mathys De Carvalho,DM,20-185,7,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Moussa Niakhate,CB,29-239,90,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Nicolás Tagliafico,LB,33-063,90,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Pavel Šulc,RW,24-308,90,0,0,0.1,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Rachid Ghezzal,FW,33-177,15,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Tanner Tessmann,DM,24-039,14,0,0,0.0,0.0
+2526,2025-11-02 Brest-Lyon,167e4077,Lyon,Tyler Morton,DM,23-002,90,0,0,0.1,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Adam Karabec,FW,22-130,27,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Afonso Moreira,LW,20-235,90,1,0,0.3,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Ainsley Maitland-Niles,RW,28-072,90,1,0,0.1,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Clinton Mata,CB,33-002,90,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Corentin Tolisso,AM,31-098,13,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Dominik Greif,GK,28-217,90,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Khalis Merah,AM,18-258,77,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Moussa Niakhate,CB,29-246,90,0,1,0.0,0.1
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Nicolás Tagliafico,LB,33-070,89,0,0,0.2,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Rachid Ghezzal,FW,33-184,63,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Ruben Kluivert,RB,24-172,90,0,0,0.0,0.0
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Tanner Tessmann,DM,24-046,90,0,0,0.0,0.3
+2526,2025-11-09 Lyon-Paris Saint-Germain,76c23d28,Lyon,Tyler Morton,DM,23-009,90,0,1,0.0,0.1
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Abner,LB,25-180,90,0,0,0.1,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Adam Karabec,RW,22-144,84,0,0,0.0,0.3
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Adil Hamdani,RW,16-306,6,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Afonso Moreira,LW,20-249,90,0,0,0.1,0.7
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Ainsley Maitland-Niles,RB,28-086,90,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Clinton Mata,CB,33-016,62,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Corentin Tolisso,DM,31-112,90,0,0,0.6,0.1
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Dominik Greif,GK,28-231,90,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Khalis Merah,AM,18-272,45,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Martin Satriano,FW,24-276,90,0,0,0.3,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Mathys De Carvalho,DM,20-206,28,0,0,0.0,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Moussa Niakhate,CB,29-260,90,0,0,0.1,0.0
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Pavel Šulc,AM,24-329,45,0,0,0.0,0.2
+2526,2025-11-23 Auxerre-Lyon,f9cdf8a6,Lyon,Tanner Tessmann,"DM,CB",24-060,90,0,0,0.2,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Abner,WB,25-187,90,1,0,0.1,0.1
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Adam Karabec,FW,22-151,6,0,0,0.1,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Afonso Moreira,CM,20-256,19,0,1,0.1,0.7
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Ainsley Maitland-Niles,WB,28-093,19,0,0,0.0,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Corentin Tolisso,AM,31-119,90,0,0,0.8,0.4
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Dominik Greif,GK,28-238,90,0,0,0.0,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Hans Hateboer,WB,31-325,71,0,0,0.5,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Khalis Merah,CB,18-279,1,0,0,0.0,0.1
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Martin Satriano,FW,24-283,84,2,0,0.5,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Mathys De Carvalho,CM,20-213,71,0,0,0.0,0.1
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Moussa Niakhate,CB,29-267,90,0,0,0.0,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Nicolás Tagliafico,CB,33-091,90,0,0,0.0,0.1
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Orel Mangala,CM,27-257,6,0,0,0.0,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Pavel Šulc,AM,24-336,90,0,1,0.2,0.2
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Tanner Tessmann,CB,24-067,89,0,0,0.0,0.0
+2526,2025-11-30 Lyon-Nantes,0a34e64f,Lyon,Tyler Morton,CM,23-030,84,0,0,0.1,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Abner,"WB,CB",25-194,90,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Afonso Moreira,WB,20-263,21,0,0,0.1,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Ainsley Maitland-Niles,WB,28-100,41,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Clinton Mata,CB,33-030,90,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Corentin Tolisso,"CM,AM",31-126,90,0,0,0.2,0.1
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Dominik Greif,GK,28-245,90,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Hans Hateboer,WB,31-332,45,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Martin Satriano,FW,24-290,90,0,0,0.0,0.2
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Mathys De Carvalho,CM,20-220,45,0,0,0.1,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Moussa Niakhate,CB,29-274,90,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Nicolás Tagliafico,CB,33-098,69,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Pavel Šulc,AM,24-343,90,0,0,0.0,0.0
+2526,2025-12-07 Lorient-Lyon,a6944734,Lyon,Tyler Morton,CM,23-037,90,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Abner,LB,25-201,90,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Adam Karabec,RW,22-165,18,0,0,0.0,0.2
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Afonso Moreira,LW,20-270,90,0,1,0.1,0.5
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Clinton Mata,CB,33-037,90,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Corentin Tolisso,LM,31-133,90,0,0,1.1,0.5
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Dominik Greif,GK,28-252,90,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Hans Hateboer,RB,31-339,84,0,0,0.1,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Khalis Merah,RM,18-293,72,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Martin Satriano,FW,24-297,72,0,0,0.2,0.1
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Mathys De Carvalho,RM,20-227,18,0,0,0.3,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Moussa Niakhate,CB,29-281,90,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Pavel Šulc,"RW,FW",24-350,88,1,0,0.8,0.3
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Rachid Ghezzal,FW,33-219,2,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Ruben Kluivert,RB,24-207,6,0,0,0.0,0.0
+2526,2025-12-14 Lyon-Le Havre,fedc0902,Lyon,Tyler Morton,CM,23-044,90,0,0,0.2,0.4
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Abner,RM,25-221,80,1,0,0.1,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Adam Karabec,FW,22-185,10,0,0,0.1,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Afonso Moreira,FW,20-290,90,0,0,0.1,0.1
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Ainsley Maitland-Niles,RB,28-127,90,0,1,0.0,0.1
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Clinton Mata,CB,33-057,90,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Corentin Tolisso,LM,31-153,89,0,0,0.1,0.1
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Dominik Greif,GK,28-272,90,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Khalis Merah,AM,18-313,65,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Martin Satriano,LM,24-317,1,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Nicolás Tagliafico,LB,33-125,90,0,2,0.1,0.8
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Orel Mangala,AM,27-291,10,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Pavel Šulc,FW,25-005,80,2,0,0.8,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Ruben Kluivert,CB,24-227,90,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Tanner Tessmann,"RM,AM",24-101,25,0,0,0.0,0.0
+2526,2026-01-03 Monaco-Lyon,6b9bd7bb,Lyon,Tyler Morton,CM,23-064,90,0,0,0.1,0.1

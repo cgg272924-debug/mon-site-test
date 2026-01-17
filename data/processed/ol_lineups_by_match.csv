@@ -1,0 +1,190 @@
+match_key,player,pos,minutes_played
+2526_2025-08-16 Lens-Lyon,Abner,LB,90
+2526_2025-08-16 Lens-Lyon,Ainsley Maitland-Niles,"RW,RB",90
+2526_2025-08-16 Lens-Lyon,Clinton Mata,CB,90
+2526_2025-08-16 Lens-Lyon,Corentin Tolisso,AM,90
+2526_2025-08-16 Lens-Lyon,Georges Mikautadze,FW,89
+2526_2025-08-16 Lens-Lyon,Malick Fofana,LW,89
+2526_2025-08-16 Lens-Lyon,Moussa Niakhate,CB,90
+2526_2025-08-16 Lens-Lyon,Rémy Descamps,GK,90
+2526_2025-08-16 Lens-Lyon,Sael Kumbedi,RB,65
+2526_2025-08-16 Lens-Lyon,Tanner Tessmann,DM,90
+2526_2025-08-16 Lens-Lyon,Tyler Morton,DM,90
+2526_2025-08-23 Lyon-Metz,Abner,LB,73
+2526_2025-08-23 Lyon-Metz,Ainsley Maitland-Niles,RB,90
+2526_2025-08-23 Lyon-Metz,Clinton Mata,CB,85
+2526_2025-08-23 Lyon-Metz,Corentin Tolisso,AM,74
+2526_2025-08-23 Lyon-Metz,Georges Mikautadze,FW,90
+2526_2025-08-23 Lyon-Metz,Malick Fofana,LW,85
+2526_2025-08-23 Lyon-Metz,Moussa Niakhate,CB,90
+2526_2025-08-23 Lyon-Metz,Pavel Šulc,RW,73
+2526_2025-08-23 Lyon-Metz,Rémy Descamps,GK,90
+2526_2025-08-23 Lyon-Metz,Tanner Tessmann,DM,90
+2526_2025-08-23 Lyon-Metz,Tyler Morton,DM,90
+2526_2025-08-31 Lyon-Marseille,Abner,"LB,LW",70
+2526_2025-08-31 Lyon-Marseille,Adam Karabec,RW,89
+2526_2025-08-31 Lyon-Marseille,Ainsley Maitland-Niles,RB,90
+2526_2025-08-31 Lyon-Marseille,Clinton Mata,CB,90
+2526_2025-08-31 Lyon-Marseille,Corentin Tolisso,FW,90
+2526_2025-08-31 Lyon-Marseille,Khalis Merah,AM,70
+2526_2025-08-31 Lyon-Marseille,Malick Fofana,LW,52
+2526_2025-08-31 Lyon-Marseille,Moussa Niakhate,CB,90
+2526_2025-08-31 Lyon-Marseille,Nicolás Tagliafico,LB,38
+2526_2025-08-31 Lyon-Marseille,Rémy Descamps,GK,90
+2526_2025-08-31 Lyon-Marseille,Tanner Tessmann,DM,90
+2526_2025-08-31 Lyon-Marseille,Tyler Morton,DM,90
+2526_2025-09-14 Rennes-Lyon,Abner,LB,90
+2526_2025-09-14 Rennes-Lyon,Adam Karabec,RW,66
+2526_2025-09-14 Rennes-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2025-09-14 Rennes-Lyon,Clinton Mata,CB,90
+2526_2025-09-14 Rennes-Lyon,Corentin Tolisso,"AM,CM,DM",90
+2526_2025-09-14 Rennes-Lyon,Khalis Merah,FW,74
+2526_2025-09-14 Rennes-Lyon,Malick Fofana,LW,84
+2526_2025-09-14 Rennes-Lyon,Moussa Niakhate,CB,90
+2526_2025-09-14 Rennes-Lyon,Rémy Descamps,GK,90
+2526_2025-09-14 Rennes-Lyon,Tanner Tessmann,"DM,CM",90
+2526_2025-09-14 Rennes-Lyon,Tyler Morton,DM,74
+2526_2025-09-19 Lyon-Angers,Adam Karabec,RW,89
+2526_2025-09-19 Lyon-Angers,Ainsley Maitland-Niles,RB,90
+2526_2025-09-19 Lyon-Angers,Clinton Mata,CB,90
+2526_2025-09-19 Lyon-Angers,Corentin Tolisso,AM,80
+2526_2025-09-19 Lyon-Angers,Dominik Greif,GK,90
+2526_2025-09-19 Lyon-Angers,Khalis Merah,DM,63
+2526_2025-09-19 Lyon-Angers,Malick Fofana,LW,89
+2526_2025-09-19 Lyon-Angers,Martin Satriano,FW,80
+2526_2025-09-19 Lyon-Angers,Moussa Niakhate,CB,90
+2526_2025-09-19 Lyon-Angers,Nicolás Tagliafico,LB,90
+2526_2025-09-19 Lyon-Angers,Tanner Tessmann,DM,90
+2526_2025-09-28 Lille-Lyon,Adam Karabec,RW,74
+2526_2025-09-28 Lille-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2025-09-28 Lille-Lyon,Clinton Mata,CB,90
+2526_2025-09-28 Lille-Lyon,Corentin Tolisso,LM,90
+2526_2025-09-28 Lille-Lyon,Dominik Greif,GK,90
+2526_2025-09-28 Lille-Lyon,Khalis Merah,FW,74
+2526_2025-09-28 Lille-Lyon,Malick Fofana,LW,89
+2526_2025-09-28 Lille-Lyon,Moussa Niakhate,CB,90
+2526_2025-09-28 Lille-Lyon,Nicolás Tagliafico,LB,90
+2526_2025-09-28 Lille-Lyon,Tanner Tessmann,CM,90
+2526_2025-09-28 Lille-Lyon,Tyler Morton,RM,90
+2526_2025-10-05 Lyon-Toulouse,Adam Karabec,RW,77
+2526_2025-10-05 Lyon-Toulouse,Ainsley Maitland-Niles,RB,90
+2526_2025-10-05 Lyon-Toulouse,Clinton Mata,CB,90
+2526_2025-10-05 Lyon-Toulouse,Corentin Tolisso,AM,90
+2526_2025-10-05 Lyon-Toulouse,Dominik Greif,GK,90
+2526_2025-10-05 Lyon-Toulouse,Malick Fofana,LW,90
+2526_2025-10-05 Lyon-Toulouse,Martin Satriano,FW,90
+2526_2025-10-05 Lyon-Toulouse,Moussa Niakhate,CB,90
+2526_2025-10-05 Lyon-Toulouse,Nicolás Tagliafico,LB,90
+2526_2025-10-05 Lyon-Toulouse,Tanner Tessmann,DM,89
+2526_2025-10-05 Lyon-Toulouse,Tyler Morton,DM,90
+2526_2025-10-18 Nice-Lyon,Abner,LB,67
+2526_2025-10-18 Nice-Lyon,Adam Karabec,RW,67
+2526_2025-10-18 Nice-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2025-10-18 Nice-Lyon,Clinton Mata,CB,76
+2526_2025-10-18 Nice-Lyon,Corentin Tolisso,DM,90
+2526_2025-10-18 Nice-Lyon,Dominik Greif,GK,90
+2526_2025-10-18 Nice-Lyon,Malick Fofana,LW,76
+2526_2025-10-18 Nice-Lyon,Martin Satriano,FW,90
+2526_2025-10-18 Nice-Lyon,Pavel Šulc,AM,90
+2526_2025-10-18 Nice-Lyon,Ruben Kluivert,CB,90
+2526_2025-10-18 Nice-Lyon,Tyler Morton,DM,76
+2526_2025-10-26 Lyon-Strasbourg,Adam Karabec,RW,76
+2526_2025-10-26 Lyon-Strasbourg,Ainsley Maitland-Niles,RB,90
+2526_2025-10-26 Lyon-Strasbourg,Clinton Mata,CB,90
+2526_2025-10-26 Lyon-Strasbourg,Corentin Tolisso,LM,90
+2526_2025-10-26 Lyon-Strasbourg,Dominik Greif,GK,90
+2526_2025-10-26 Lyon-Strasbourg,Malick Fofana,LW,67
+2526_2025-10-26 Lyon-Strasbourg,Moussa Niakhate,CB,90
+2526_2025-10-26 Lyon-Strasbourg,Nicolás Tagliafico,LB,90
+2526_2025-10-26 Lyon-Strasbourg,Pavel Šulc,FW,76
+2526_2025-10-26 Lyon-Strasbourg,Tanner Tessmann,CM,89
+2526_2025-10-26 Lyon-Strasbourg,Tyler Morton,RM,90
+2526_2025-10-29 Paris FC-Lyon,Abner,LB,60
+2526_2025-10-29 Paris FC-Lyon,Adam Karabec,RW,67
+2526_2025-10-29 Paris FC-Lyon,Afonso Moreira,"LW,LM",73
+2526_2025-10-29 Paris FC-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2025-10-29 Paris FC-Lyon,Clinton Mata,CB,90
+2526_2025-10-29 Paris FC-Lyon,Corentin Tolisso,AM,67
+2526_2025-10-29 Paris FC-Lyon,Dominik Greif,GK,90
+2526_2025-10-29 Paris FC-Lyon,Mathys De Carvalho,"DM,CM",90
+2526_2025-10-29 Paris FC-Lyon,Moussa Niakhate,CB,90
+2526_2025-10-29 Paris FC-Lyon,Pavel Šulc,FW,84
+2526_2025-10-29 Paris FC-Lyon,Tyler Morton,"DM,CM,RM",90
+2526_2025-11-02 Brest-Lyon,Afonso Moreira,LW,90
+2526_2025-11-02 Brest-Lyon,Ainsley Maitland-Niles,RB,76
+2526_2025-11-02 Brest-Lyon,Clinton Mata,CB,90
+2526_2025-11-02 Brest-Lyon,Corentin Tolisso,"DM,AM",83
+2526_2025-11-02 Brest-Lyon,Dominik Greif,GK,90
+2526_2025-11-02 Brest-Lyon,Martin Satriano,FW,75
+2526_2025-11-02 Brest-Lyon,Moussa Niakhate,CB,90
+2526_2025-11-02 Brest-Lyon,Nicolás Tagliafico,LB,90
+2526_2025-11-02 Brest-Lyon,Pavel Šulc,RW,90
+2526_2025-11-02 Brest-Lyon,Tyler Morton,DM,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Afonso Moreira,LW,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Ainsley Maitland-Niles,RW,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Clinton Mata,CB,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Dominik Greif,GK,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Khalis Merah,AM,77
+2526_2025-11-09 Lyon-Paris Saint-Germain,Moussa Niakhate,CB,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Nicolás Tagliafico,LB,89
+2526_2025-11-09 Lyon-Paris Saint-Germain,Rachid Ghezzal,FW,63
+2526_2025-11-09 Lyon-Paris Saint-Germain,Ruben Kluivert,RB,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Tanner Tessmann,DM,90
+2526_2025-11-09 Lyon-Paris Saint-Germain,Tyler Morton,DM,90
+2526_2025-11-23 Auxerre-Lyon,Abner,LB,90
+2526_2025-11-23 Auxerre-Lyon,Adam Karabec,RW,84
+2526_2025-11-23 Auxerre-Lyon,Afonso Moreira,LW,90
+2526_2025-11-23 Auxerre-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2025-11-23 Auxerre-Lyon,Clinton Mata,CB,62
+2526_2025-11-23 Auxerre-Lyon,Corentin Tolisso,DM,90
+2526_2025-11-23 Auxerre-Lyon,Dominik Greif,GK,90
+2526_2025-11-23 Auxerre-Lyon,Khalis Merah,AM,45
+2526_2025-11-23 Auxerre-Lyon,Martin Satriano,FW,90
+2526_2025-11-23 Auxerre-Lyon,Moussa Niakhate,CB,90
+2526_2025-11-23 Auxerre-Lyon,Pavel Šulc,AM,45
+2526_2025-11-23 Auxerre-Lyon,Tanner Tessmann,"DM,CB",90
+2526_2025-11-30 Lyon-Nantes,Abner,WB,90
+2526_2025-11-30 Lyon-Nantes,Corentin Tolisso,AM,90
+2526_2025-11-30 Lyon-Nantes,Dominik Greif,GK,90
+2526_2025-11-30 Lyon-Nantes,Hans Hateboer,WB,71
+2526_2025-11-30 Lyon-Nantes,Martin Satriano,FW,84
+2526_2025-11-30 Lyon-Nantes,Mathys De Carvalho,CM,71
+2526_2025-11-30 Lyon-Nantes,Moussa Niakhate,CB,90
+2526_2025-11-30 Lyon-Nantes,Nicolás Tagliafico,CB,90
+2526_2025-11-30 Lyon-Nantes,Pavel Šulc,AM,90
+2526_2025-11-30 Lyon-Nantes,Tanner Tessmann,CB,89
+2526_2025-11-30 Lyon-Nantes,Tyler Morton,CM,84
+2526_2025-12-07 Lorient-Lyon,Abner,"WB,CB",90
+2526_2025-12-07 Lorient-Lyon,Ainsley Maitland-Niles,WB,41
+2526_2025-12-07 Lorient-Lyon,Clinton Mata,CB,90
+2526_2025-12-07 Lorient-Lyon,Corentin Tolisso,"CM,AM",90
+2526_2025-12-07 Lorient-Lyon,Dominik Greif,GK,90
+2526_2025-12-07 Lorient-Lyon,Hans Hateboer,WB,45
+2526_2025-12-07 Lorient-Lyon,Martin Satriano,FW,90
+2526_2025-12-07 Lorient-Lyon,Mathys De Carvalho,CM,45
+2526_2025-12-07 Lorient-Lyon,Moussa Niakhate,CB,90
+2526_2025-12-07 Lorient-Lyon,Nicolás Tagliafico,CB,69
+2526_2025-12-07 Lorient-Lyon,Pavel Šulc,AM,90
+2526_2025-12-07 Lorient-Lyon,Tyler Morton,CM,90
+2526_2025-12-14 Lyon-Le Havre,Abner,LB,90
+2526_2025-12-14 Lyon-Le Havre,Afonso Moreira,LW,90
+2526_2025-12-14 Lyon-Le Havre,Clinton Mata,CB,90
+2526_2025-12-14 Lyon-Le Havre,Corentin Tolisso,LM,90
+2526_2025-12-14 Lyon-Le Havre,Dominik Greif,GK,90
+2526_2025-12-14 Lyon-Le Havre,Hans Hateboer,RB,84
+2526_2025-12-14 Lyon-Le Havre,Khalis Merah,RM,72
+2526_2025-12-14 Lyon-Le Havre,Martin Satriano,FW,72
+2526_2025-12-14 Lyon-Le Havre,Moussa Niakhate,CB,90
+2526_2025-12-14 Lyon-Le Havre,Pavel Šulc,"RW,FW",88
+2526_2025-12-14 Lyon-Le Havre,Tyler Morton,CM,90
+2526_2026-01-03 Monaco-Lyon,Abner,RM,80
+2526_2026-01-03 Monaco-Lyon,Afonso Moreira,FW,90
+2526_2026-01-03 Monaco-Lyon,Ainsley Maitland-Niles,RB,90
+2526_2026-01-03 Monaco-Lyon,Clinton Mata,CB,90
+2526_2026-01-03 Monaco-Lyon,Corentin Tolisso,LM,89
+2526_2026-01-03 Monaco-Lyon,Dominik Greif,GK,90
+2526_2026-01-03 Monaco-Lyon,Khalis Merah,AM,65
+2526_2026-01-03 Monaco-Lyon,Nicolás Tagliafico,LB,90
+2526_2026-01-03 Monaco-Lyon,Pavel Šulc,FW,80
+2526_2026-01-03 Monaco-Lyon,Ruben Kluivert,CB,90
+2526_2026-01-03 Monaco-Lyon,Tyler Morton,CM,90

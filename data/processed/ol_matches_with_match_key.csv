@@ -1,0 +1,35 @@
+match_key,date,opponent,venue,result,points,match_rating,score_final
+2025-09-19_lyon,2025-09-19,lyon,Away,L,0,29.0,17.4
+2025-11-23_lyon,2025-11-23,lyon,Home,D,1,57.0,47.53
+2025-11-02_lyon,2025-11-02,lyon,Home,D,1,61.5,50.23
+2025-12-14_lyon,2025-12-14,lyon,Away,L,0,27.5,16.5
+2025-08-16_lyon,2025-08-16,lyon,Home,L,0,30.0,18.0
+2025-09-28_lyon,2025-09-28,lyon,Home,L,0,35.0,21.0
+2025-12-07_lyon,2025-12-07,lyon,Home,W,3,85.5,91.3
+2025-08-16_lens,2025-08-16,lens,Away,W,3,78.0,86.8
+2025-08-23_metz,2025-08-23,metz,Home,W,3,96.0,97.6
+2025-08-31_marseille,2025-08-31,marseille,Home,W,3,82.5,89.5
+2025-09-14_rennes,2025-09-14,rennes,Away,L,0,26.0,15.6
+2025-09-19_angers,2025-09-19,angers,Home,W,3,79.0,87.4
+2025-09-28_lille,2025-09-28,lille,Away,W,3,73.0,83.8
+2025-10-05_toulouse,2025-10-05,toulouse,Home,L,0,30.0,18.0
+2025-10-18_nice,2025-10-18,nice,Away,L,0,46.0,27.6
+2025-10-26_strasbourg,2025-10-26,strasbourg,Home,W,3,81.0,88.6
+2025-10-29_paris fc,2025-10-29,paris fc,Away,D,1,61.5,50.23
+2025-11-02_brest,2025-11-02,brest,Away,D,1,51.5,44.23
+2025-11-09_paris saint-germain,2025-11-09,paris saint-germain,Home,L,0,26.5,15.9
+2025-11-23_auxerre,2025-11-23,auxerre,Away,D,1,56.0,46.93
+2025-11-30_nantes,2025-11-30,nantes,Home,W,3,91.5,94.9
+2025-12-07_lorient,2025-12-07,lorient,Away,L,0,22.5,13.5
+2025-12-14_le havre,2025-12-14,le havre,Home,W,3,80.5,88.3
+2026-01-03_monaco,2026-01-03,monaco,Away,W,3,87.5,92.5
+2025-08-31_lyon,2025-08-31,lyon,Away,L,0,25.5,15.3
+2025-08-23_lyon,2025-08-23,lyon,Away,L,0,12.0,7.2
+2026-01-03_lyon,2026-01-03,lyon,Home,L,0,20.5,12.3
+2025-11-30_lyon,2025-11-30,lyon,Away,L,0,16.5,9.9
+2025-10-18_lyon,2025-10-18,lyon,Home,W,3,62.0,77.2
+2025-10-29_lyon,2025-10-29,lyon,Home,D,1,51.5,44.23
+2025-11-09_lyon,2025-11-09,lyon,Away,W,3,81.5,88.9
+2025-09-14_lyon,2025-09-14,lyon,Home,W,3,82.0,89.2
+2025-10-26_lyon,2025-10-26,lyon,Away,L,0,27.0,16.2
+2025-10-05_lyon,2025-10-05,lyon,Away,W,3,78.0,86.8
