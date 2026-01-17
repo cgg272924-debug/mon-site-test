@@ -361,6 +361,10 @@
                         <h3>Meilleures Combinaisons</h3>
                         <div id="combo-stats" class="loading">Chargement...</div>
                     </div>
+                    <div class="stat-card-large">
+                        <h3>OL (FBref, saison en cours)</h3>
+                        <div id="ol-fbref-stats" class="loading">Chargement...</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -968,7 +972,16 @@
                 pos: p.pos,
                 minutes: parseInt(p['Playing Time_Min'] || '0', 10) || 0,
                 rating: parseFloat(p.rating || '0') || 0,
-                importance: parseFloat(p.importance || '0') || 0
+                importance: parseFloat(p.importance || '0') || 0,
+                gls90: parseFloat(p['Per 90 Minutes_Gls'] || '0') || 0,
+                ast90: parseFloat(p['Per 90 Minutes_Ast'] || '0') || 0,
+                xg90: parseFloat(p['Per 90 Minutes_xG'] || '0') || 0,
+                xag90: parseFloat(p['Per 90 Minutes_xAG'] || '0') || 0,
+                prgC: parseFloat(p['Progression_PrgC'] || '0') || 0,
+                prgP: parseFloat(p['Progression_PrgP'] || '0') || 0,
+                prgR: parseFloat(p['Progression_PrgR'] || '0') || 0,
+                cardsY: parseFloat(p['Performance_CrdY'] || '0') || 0,
+                cardsR: parseFloat(p['Performance_CrdR'] || '0') || 0
             }));
 
             const distinctPositions = Array.from(
@@ -1012,11 +1025,20 @@
                         <h3>Détails du Joueur</h3>
                         <p><strong>Nom:</strong> ${player.name || ''}</p>
                         <p><strong>Position:</strong> ${player.pos || ''}</p>
-                        <p><strong>Temps de Jeu:</strong> ${player.minutes.toLocaleString(
-                            'fr-FR'
-                        )} minutes</p>
+                        <p><strong>Temps de Jeu:</strong> ${player.minutes.toLocaleString('fr-FR')} minutes</p>
                         <p><strong>Note:</strong> ${player.rating.toFixed(1)}</p>
                         <p><strong>Importance:</strong> ${player.importance.toFixed(2)}</p>
+                        <hr>
+                        <h4>Pourquoi cette note ?</h4>
+                        <ul>
+                            <li><strong>Production offensive (par 90):</strong> buts ${player.gls90.toFixed(2)}, passes ${player.ast90.toFixed(2)}</li>
+                            <li><strong>Qualité des occasions (par 90):</strong> xG ${player.xg90.toFixed(2)}, xAG ${player.xag90.toFixed(2)}</li>
+                            <li><strong>Progression du ballon:</strong> PrgC ${player.prgC.toFixed(0)}, PrgP ${player.prgP.toFixed(0)}, PrgR ${player.prgR.toFixed(0)}</li>
+                            <li><strong>Discipline:</strong> jaunes ${player.cardsY.toFixed(0)}, rouges ${player.cardsR.toFixed(0)}</li>
+                        </ul>
+                        <p class="text-sm text-slate-500">
+                            L'importance combine la note et le temps de jeu pour refléter la contribution réelle sur la saison.
+                        </p>
                     </div>
                 `;
                 createModal(`Joueur: ${player.name || ''}`, content);

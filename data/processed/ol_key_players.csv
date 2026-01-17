@@ -1,4 +1,13 @@
-player,pos,Playing Time_Min,rating,importance
-Pavel Šulc,"FW,MF",887,66.6,80.34749034749035
-Dominik Greif,GK,1170,7.5,75.0
-Ainsley Maitland-Niles,"DF,FW",1306,31.4,62.23938223938224
+player,pos,Playing Time_Min,rating,importance,Per 90 Minutes_Gls,Per 90 Minutes_Ast,Per 90 Minutes_xG,Per 90 Minutes_xAG,Progression_PrgC,Progression_PrgP,Progression_PrgR,Performance_CrdY,Performance_CrdR
+Pavel Šulc,"FW,MF",887,66.6,82.80405405405405,0.81,0.2,0.57,0.2,23,25,48,2,0
+Corentin Tolisso,MF,1396,42.8,74.88636363636363,0.19,0.0,0.41,0.15,18,93,75,4,0
+Afonso Moreira,FW,655,59.5,67.47433309933311,0.27,0.55,0.13,0.44,30,16,99,2,0
+Malick Fofana,FW,721,50.2,59.89075114075115,0.25,0.12,0.34,0.24,35,14,95,1,0
+Ainsley Maitland-Niles,"DF,FW",1306,31.4,59.81660231660231,0.07,0.21,0.11,0.15,21,48,60,3,1
+Tyler Morton,MF,1314,24.5,52.80602843102843,0.07,0.07,0.07,0.1,28,67,11,3,1
+Moussa Niakhate,DF,1364,19.0,48.691646191646186,0.0,0.13,0.01,0.02,18,74,4,3,0
+Tanner Tessmann,"MF,DF",1063,23.2,42.95454545454545,0.08,0.0,0.08,0.13,8,61,18,0,0
+Abner,DF,890,25.9,39.958976833976834,0.2,0.0,0.1,0.04,18,53,41,2,1
+Nicolás Tagliafico,DF,889,25.4,39.39759564759565,0.0,0.3,0.12,0.14,15,40,23,3,1
+Dominik Greif,GK,1170,7.5,30.002851877851878,0.0,0.08,0.0,0.01,0,1,0,0,0
+Rémy Descamps,GK,360,5.0,0.0,0.0,0.0,0.0,0.0,0,0,0,0,0

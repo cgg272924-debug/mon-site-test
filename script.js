@@ -585,21 +585,54 @@ async function loadStats() {
             `;
         }
         
-        // Charger les meilleures combos
         try {
-            const combosResponse = await fetch('data/processed/ol_best_combos_2_players.csv');
+            const combosResponse = await fetch('data/processed/ol_best_combos_ALL_3_to_11.csv');
             const combosText = await combosResponse.text();
-            const combos = parseCSV(combosText);
+            const rawCombos = parseCSV(combosText);
             
             const comboStatsDiv = document.getElementById('combo-stats');
-            if (comboStatsDiv && combos.length > 0) {
-                const topCombos = combos.slice(0, 5);
-                let comboHTML = '<ul>';
-                topCombos.forEach((combo, index) => {
-                    comboHTML += `<li><strong>${index + 1}.</strong> ${combo.combo || combo.players || 'N/A'}</li>`;
-                });
-                comboHTML += '</ul>';
-                comboStatsDiv.innerHTML = comboHTML;
+            if (comboStatsDiv && rawCombos.length > 0) {
+                const combos = rawCombos
+                    .map(c => ({
+                        name: c.combo || c.players || '',
+                        size: parseInt(c.size || c.combo_size || '0', 10) || 0,
+                        matches: parseInt(c.matches || '0', 10) || 0,
+                        avgPoints: parseFloat(c.avg_points || '0') || 0,
+                        avgScore: parseFloat(c.avg_score_final || c.avg_score || '0') || 0
+                    }))
+                    .filter(c => c.name && c.size >= 2);
+
+                const pickBestForSize = targetSize => {
+                    const candidates = combos.filter(c => c.size === targetSize);
+                    if (candidates.length === 0) {
+                        return null;
+                    }
+                    return candidates.sort((a, b) => {
+                        if (b.avgPoints !== a.avgPoints) {
+                            return b.avgPoints - a.avgPoints;
+                        }
+                        return b.avgScore - a.avgScore;
+                    })[0];
+                };
+
+                const bestBySize = [];
+                for (let size = 2; size <= 11; size++) {
+                    const best = pickBestForSize(size);
+                    if (best) {
+                        bestBySize.push({ size, best });
+                    }
+                }
+
+                if (bestBySize.length === 0) {
+                    comboStatsDiv.innerHTML = '<p>Données de combinaisons non disponibles</p>';
+                } else {
+                    let html = '<ul>';
+                    bestBySize.forEach(entry => {
+                        html += `<li><strong>${entry.size} joueurs:</strong> ${entry.best.name} — ${entry.best.avgPoints.toFixed(2)} pts/m (${entry.best.matches} matchs)</li>`;
+                    });
+                    html += '</ul>';
+                    comboStatsDiv.innerHTML = html;
+                }
             } else if (comboStatsDiv) {
                 comboStatsDiv.innerHTML = '<p>Données de combinaisons non disponibles</p>';
             }
@@ -607,6 +640,71 @@ async function loadStats() {
             const comboStatsDiv = document.getElementById('combo-stats');
             if (comboStatsDiv) {
                 comboStatsDiv.innerHTML = '<p>Données de combinaisons non disponibles</p>';
+            }
+        }
+
+        try {
+            const olStatsResponse = await fetch('data/ol_stats.csv');
+            const olStatsText = await olStatsResponse.text();
+            const olStatsRows = parseCSV(olStatsText);
+            const olStatsDiv = document.getElementById('ol-fbref-stats');
+            if (olStatsDiv && olStatsRows && olStatsRows.length > 0) {
+                const olRow =
+                    olStatsRows.find(r =>
+                        (r.team || '').toLowerCase().includes('lyon')
+                    ) || olStatsRows[0];
+
+                const keys = Object.keys(olRow || {});
+
+                const getNumber = candidates => {
+                    for (const key of candidates) {
+                        const foundKey = keys.find(
+                            k => k.toLowerCase() === key.toLowerCase()
+                        );
+                        if (
+                            foundKey &&
+                            olRow[foundKey] !== undefined &&
+                            olRow[foundKey] !== ''
+                        ) {
+                            const value = parseFloat(olRow[foundKey]);
+                            if (!Number.isNaN(value)) {
+                                return value;
+                            }
+                        }
+                    }
+                    return null;
+                };
+
+                const goalsFor = getNumber(['goals_for', 'gf', 'goals']);
+                const goalsAgainst = getNumber(['goals_against', 'ga']);
+                const xgFor = getNumber(['xg_for', 'xg']);
+                const xgAgainst = getNumber(['xg_against', 'xga']);
+                const shots = getNumber(['shots', 'shots_total']);
+                const possession = getNumber(['possession']);
+
+                let html = '<ul>';
+                if (goalsFor !== null && goalsAgainst !== null) {
+                    html += `<li><strong>Buts marqués / encaissés:</strong> ${goalsFor} / ${goalsAgainst}</li>`;
+                }
+                if (xgFor !== null && xgAgainst !== null) {
+                    html += `<li><strong>xG pour / contre:</strong> ${xgFor.toFixed(2)} / ${xgAgainst.toFixed(2)}</li>`;
+                }
+                if (shots !== null) {
+                    html += `<li><strong>Tirs totaux:</strong> ${shots.toFixed(0)}</li>`;
+                }
+                if (possession !== null) {
+                    html += `<li><strong>Possession moyenne:</strong> ${possession.toFixed(1)}%</li>`;
+                }
+                html += '</ul>';
+
+                olStatsDiv.innerHTML = html;
+            } else if (olStatsDiv) {
+                olStatsDiv.innerHTML = '<p>Données FBref non disponibles</p>';
+            }
+        } catch (olError) {
+            const olStatsDiv = document.getElementById('ol-fbref-stats');
+            if (olStatsDiv) {
+                olStatsDiv.innerHTML = '<p>Données FBref non disponibles</p>';
             }
         }
     } catch (error) {
@@ -621,6 +719,89 @@ async function loadStats() {
 // Charger les classements Ligue 1
 async function loadStandings() {
     try {
+        let fbrefOk = false;
+        try {
+            const fbref = await fetch('data/ligue1_standings.csv');
+            if (fbref.ok) {
+                const fbText = await fbref.text();
+                const fbRows = parseCSV(fbText);
+                const tbody = document.getElementById('standings-general-tbody');
+                if (tbody && fbRows && fbRows.length > 0) {
+                    const keys = Object.keys(fbRows[0] || {});
+                    const getKey = (cands) => {
+                        for (const k of cands) {
+                            const hit = keys.find(x => x.toLowerCase() === k.toLowerCase());
+                            if (hit) return hit;
+                        }
+                        return null;
+                    };
+                    const kTeam = getKey(['team', 'squad']);
+                    const kMp = getKey(['mp', 'matches', 'played']);
+                    const kPts = getKey(['pts', 'points']);
+                    const kW = getKey(['wins', 'w']);
+                    const kD = getKey(['draws', 'd']);
+                    const kL = getKey(['losses', 'l']);
+                    const kGf = getKey(['gf', 'goals_for']);
+                    const kGa = getKey(['ga', 'goals_against']);
+
+                    const rows = fbRows
+                        .map(r => ({
+                            team: r[kTeam] || '',
+                            mp: parseFloat(r[kMp] || '0') || 0,
+                            pts: parseFloat(r[kPts] || '0') || 0,
+                            w: parseFloat(r[kW] || '0') || 0,
+                            d: parseFloat(r[kD] || '0') || 0,
+                            l: parseFloat(r[kL] || '0') || 0,
+                            gf: parseFloat(r[kGf] || '0') || 0,
+                            ga: parseFloat(r[kGa] || '0') || 0,
+                        }))
+                        .filter(r => r.team);
+
+                    rows.sort((a, b) => {
+                        if (b.pts !== a.pts) return b.pts - a.pts;
+                        const gdA = a.gf - a.ga;
+                        const gdB = b.gf - b.ga;
+                        if (gdB !== gdA) return gdB - gdA;
+                        return b.gf - a.gf;
+                    });
+
+                    tbody.innerHTML = '';
+                    rows.forEach((team, idx) => {
+                        const tr = document.createElement('tr');
+                        const gd = team.gf - team.ga;
+                        const ppm = team.mp > 0 ? team.pts / team.mp : 0;
+                        const wr = team.mp > 0 ? (team.w / team.mp) * 100 : 0;
+                        const gfpm = team.mp > 0 ? team.gf / team.mp : 0;
+                        const gapm = team.mp > 0 ? team.ga / team.mp : 0;
+                        tr.innerHTML = `
+                            <td class="rank-cell">${idx + 1}</td>
+                            <td class="team-cell"><strong>${team.team}</strong></td>
+                            <td>${team.mp}</td>
+                            <td>${team.w}</td>
+                            <td>${team.d}</td>
+                            <td>${team.l}</td>
+                            <td>${team.gf}</td>
+                            <td>${team.ga}</td>
+                            <td class="${gd >= 0 ? 'positive' : 'negative'}">${gd >= 0 ? '+' : ''}${gd}</td>
+                            <td class="points-cell"><strong>${team.pts}</strong></td>
+                            <td>${ppm.toFixed(2)}</td>
+                            <td>${wr.toFixed(1)}%</td>
+                            <td>${gfpm.toFixed(2)}</td>
+                            <td>${gapm.toFixed(2)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    fbrefOk = true;
+                }
+            }
+        } catch (e) {
+            fbrefOk = false;
+        }
+
+        if (fbrefOk) {
+            return;
+        }
+
         const response = await fetch('data/processed/league1_standings_home_away.csv');
         const text = await response.text();
         const standings = parseCSV(text);
@@ -629,13 +810,11 @@ async function loadStandings() {
             throw new Error('Aucune donnée de classement disponible');
         }
 
-        // Filtrer l'équipe "Choc des Olympiques Lyon" qui ne devrait pas être dans le classement
         const filteredStandings = standings.filter(team => {
             const teamName = (team.team || '').toLowerCase();
             return !teamName.includes('choc') && !teamName.includes('olympiques');
         });
 
-        // Afficher le classement général
         displayStandingsTable(filteredStandings, 'general', 'standings-general-tbody', {
             rank: 'rank',
             team: 'team',
@@ -653,7 +832,6 @@ async function loadStandings() {
             goals_against_per_match: 'goals_against_per_match'
         });
 
-        // Afficher le classement domicile
         displayStandingsTable(filteredStandings, 'home', 'standings-home-tbody', {
             rank: 'home_rank',
             team: 'team',
@@ -671,7 +849,6 @@ async function loadStandings() {
             goals_against_per_match: 'home_goals_against_per_match'
         });
 
-        // Afficher le classement extérieur
         displayStandingsTable(filteredStandings, 'away', 'standings-away-tbody', {
             rank: 'away_rank',
             team: 'team',
@@ -688,6 +865,8 @@ async function loadStandings() {
             goals_for_per_match: 'away_goals_for_per_match',
             goals_against_per_match: 'away_goals_against_per_match'
         });
+
+        // Les tableaux sont affichés directement à partir du CSV de classement.
 
     } catch (error) {
         console.error('Erreur lors du chargement des classements:', error);
