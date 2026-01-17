@@ -22,6 +22,8 @@
                     <li><a href="#home" class="nav-link active">Accueil</a></li>
                     <li><a href="#standings" class="nav-link">Classements</a></li>
                     <li><a href="#matches" class="nav-link">Matchs</a></li>
+                    <li><a href="#mercato" class="nav-link">Mercato</a></li>
+                    <li><a href="#news" class="nav-link">Actualités</a></li>
                     <li><a href="#players" class="nav-link">Joueurs</a></li>
                     <li><a href="#lineups" class="nav-link">Compositions</a></li>
                     <li><a href="#styles" class="nav-link">Styles</a></li>
@@ -303,11 +305,23 @@
             </div>
         </section>
 
-        <!-- Section Matchs -->
         <section id="matches" class="section-content">
             <div class="container">
                 <h2 class="section-title">Tous les Matchs</h2>
                 <div id="matches-react-root"></div>
+            </div>
+        </section>
+
+        <section id="mercato" class="section-content">
+            <div class="container">
+                <h2 class="section-title">Mercato</h2>
+                <div id="mercato-react-root"></div>
+            </div>
+        </section>
+        <section id="news" class="section-content">
+            <div class="container">
+                <h2 class="section-title">Actualités OL</h2>
+                <div id="news-react-root"></div>
             </div>
         </section>
 
@@ -1647,6 +1661,292 @@
             );
         }
 
+        function MercatoReactView() {
+            const a = useCsvData('data/processed/ol_mercato.csv');
+            const b = useCsvData('data/processed/ol_transfers_official.csv');
+            const c = useCsvData('data/processed/ol_news.csv');
+            const loading = a.loading || b.loading || c.loading;
+            const error = a.error || b.error || c.error;
+            const rows = a.rows || [];
+            const transfersRows = b.rows || [];
+            const newsRows = c.rows || [];
+            const [seasonFilter, setSeasonFilter] = useState('current');
+
+            if (loading) {
+                return (
+                    <div className="table-container">
+                        <div className="loading">Chargement du mercato...</div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="table-container">
+                        <div className="error">Erreur lors du chargement: {error}</div>
+                    </div>
+                );
+            }
+
+            const uniqueByUrl = new Map();
+            (rows || []).forEach(r => {
+                const key = r.url || r.headline || '';
+                if (!uniqueByUrl.has(key)) uniqueByUrl.set(key, r);
+            });
+            const mercatos = Array.from(uniqueByUrl.values()).map(r => ({
+                date: r.date || '',
+                headline: r.headline || r.title || '',
+                category: (r.category || 'rumor').toLowerCase(),
+                direction: (r.direction || 'unknown').toLowerCase(),
+                url: r.url || '',
+                source: r.source || "L'Equipe"
+            }));
+
+            const olfrOfficials = (transfersRows || []).map(r => ({
+                date: r.date || '',
+                headline: r.headline || '',
+                category: 'official',
+                direction: (r.direction || 'unknown').toLowerCase(),
+                url: r.url || '',
+                source: r.source || 'Transfermarkt',
+                fee: r.fee || ''
+            }));
+            const eqOfficials = mercatos.filter(m => m.category === 'official');
+            const officialData = olfrOfficials.length > 0 ? olfrOfficials : eqOfficials;
+            const toSeason = (dStr) => {
+                if (!dStr) return '';
+                const d = new Date(dStr);
+                if (isNaN(d.getTime())) return '';
+                const y = d.getUTCFullYear();
+                const m = d.getUTCMonth() + 1;
+                const start = m >= 7 ? y : y - 1;
+                const endShort = String((start + 1) % 100).padStart(2, '0');
+                return `${start}-${endShort}`;
+            };
+            const seasonsSet = new Set(
+                officialData
+                    .map(o => toSeason(o.date))
+                    .filter(s => s)
+            );
+            const seasons = Array.from(seasonsSet).sort((a, b) => b.localeCompare(a));
+            const now = new Date();
+            const currentStart = (now.getUTCMonth() + 1) >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+            const currentLabel = `${currentStart}-${String((currentStart + 1) % 100).padStart(2, '0')}`;
+            const effectiveSeason = seasonFilter === 'current' ? currentLabel : seasonFilter;
+            const applySeasonFilter = (arr) => {
+                if (!effectiveSeason) return arr;
+                return arr.filter(o => {
+                    const s = toSeason(o.date);
+                    if (s) return s === effectiveSeason;
+                    return seasonFilter === 'current';
+                });
+            };
+            const officialIn = officialData.filter(m => m.direction === 'in');
+            const officialOut = officialData.filter(m => m.direction === 'out');
+            const officialInFiltered = applySeasonFilter(officialIn).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+            const officialOutFiltered = applySeasonFilter(officialOut).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+            const rumors = mercatos.filter(m => m.category !== 'official');
+            const news = (newsRows || []).map(r => ({
+                date: r.date || '',
+                headline: r.headline || r.title || '',
+                url: r.url || '',
+                source: r.source || 'O&L'
+            }));
+            const hasAny = officialInFiltered.length + officialOutFiltered.length + rumors.length + news.length > 0;
+            const officialSourceLabel = officialData.length > 0 ? officialData[0].source : 'Transfermarkt';
+
+            const renderItem = m => {
+                const dateLabel = m.date ? formatDate(m.date) : '';
+                const directionLabel =
+                    m.direction === 'in'
+                        ? 'Arrivée'
+                        : m.direction === 'out'
+                        ? 'Départ'
+                        : '';
+                const categoryLabel =
+                    m.category === 'official' ? 'Officiel' : 'Rumeur';
+                return (
+                    <li
+                        key={
+                            m.url ||
+                            m.headline + m.date + m.category + m.direction
+                        }
+                        className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs"
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex flex-col">
+                                <span className="text-[11px] text-slate-300">
+                                    {dateLabel || 'Date inconnue'}
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                    {categoryLabel}
+                                    {directionLabel
+                                        ? ` · ${directionLabel}`
+                                        : ''}
+                                </span>
+                            </div>
+                            {m.source && (
+                                <span className="text-[10px] text-slate-500">
+                                    {m.source}
+                                </span>
+                            )}
+                        </div>
+                        <div className="mt-1 text-[12px] text-slate-100">
+                            {m.url ? (
+                                <a
+                                    href={m.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="hover:underline"
+                                >
+                                    {m.headline || m.url}
+                                </a>
+                            ) : (
+                                m.headline || 'Article'
+                            )}
+                        </div>
+                        {m.fee && (
+                            <div className="mt-1 text-[11px] text-slate-300">
+                                {m.fee}
+                            </div>
+                        )}
+                    </li>
+                );
+            };
+
+            if (!hasAny) {
+                return (
+                    <div className="table-container">
+                        <div className="loading">
+                            Aucune donnée mercato disponible.
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3 rounded-xl bg-slate-900/70 p-4">
+                        <label className="text-xs text-slate-300">Saison</label>
+                        <select
+                            className="bg-slate-800 border border-slate-700 text-xs text-slate-100 rounded-md px-2 py-1"
+                            value={seasonFilter}
+                            onChange={e => setSeasonFilter(e.target.value)}
+                        >
+                            <option value="current">Courante ({currentLabel})</option>
+                            {seasons.map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                            <option value="">Toutes</option>
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <div className="rounded-xl bg-slate-900/70 p-4">
+                            <h3 className="text-sm font-semibold text-slate-100">
+                                Arrivées officielles ({officialSourceLabel})
+                            </h3>
+                            <ul className="mt-3 space-y-2">
+                                {officialInFiltered.length > 0 ? (
+                                    officialInFiltered.map(renderItem)
+                                ) : (
+                                    <li className="text-xs text-slate-400">
+                                        Aucune arrivée officielle détectée.
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                        <div className="rounded-xl bg-slate-900/70 p-4">
+                            <h3 className="text-sm font-semibold text-slate-100">
+                                Départs officiels ({officialSourceLabel})
+                            </h3>
+                            <ul className="mt-3 space-y-2">
+                                {officialOutFiltered.length > 0 ? (
+                                    officialOutFiltered.map(renderItem)
+                                ) : (
+                                    <li className="text-xs text-slate-400">
+                                        Aucun départ officiel détecté.
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
+                        <div className="rounded-xl bg-slate-900/70 p-4">
+                            <h3 className="text-sm font-semibold text-slate-100">
+                                Rumeurs (L’Équipe)
+                            </h3>
+                            <ul className="mt-3 space-y-2">
+                                {rumors.length > 0 ? (
+                                    rumors.map(renderItem)
+                                ) : (
+                                    <li className="text-xs text-slate-400">
+                                        Aucune rumeur récente détectée.
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function NewsReactView() {
+            const { loading, error, rows } = useCsvData('data/processed/ol_news.csv');
+            if (loading) {
+                return (
+                    <div className="table-container">
+                        <div className="loading">Chargement des actualités...</div>
+                    </div>
+                );
+            }
+            if (error) {
+                return (
+                    <div className="table-container">
+                        <div className="error">Erreur lors du chargement des actualités: {error}</div>
+                    </div>
+                );
+            }
+            const articles = (rows || []).map(r => ({
+                date: r.date || '',
+                headline: r.headline || r.title || '',
+                url: r.url || '',
+                source: r.source || 'O&L'
+            }));
+            const renderItem = a => {
+                const dateLabel = a.date ? formatDate(a.date) : '';
+                return (
+                    <li
+                        key={a.url || a.headline}
+                        className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs"
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-300">{dateLabel || ''}</span>
+                            <span className="text-[10px] text-slate-500">{a.source}</span>
+                        </div>
+                        <div className="mt-1 text-[12px] text-slate-100">
+                            <a href={a.url} target="_blank" rel="noreferrer" className="hover:underline">
+                                {a.headline || a.url}
+                            </a>
+                        </div>
+                    </li>
+                );
+            };
+            return (
+                <div className="space-y-4">
+                    <div className="rounded-xl bg-slate-900/70 p-4">
+                        <h3 className="text-sm font-semibold text-slate-100">Actualités OL (O&L)</h3>
+                        <ul className="mt-3 space-y-2">
+                            {articles.length > 0 ? (
+                                articles.map(renderItem)
+                            ) : (
+                                <li className="text-xs text-slate-400">Aucune actualité disponible.</li>
+                            )}
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
         function CombosAdvancedReactView() {
             const { loading, error, rows } = useCsvData(
                 'data/processed/ol_best_combos_ALL_3_to_11.csv'
@@ -2245,6 +2545,18 @@
         const playersRoot = document.getElementById('players-react-root');
         if (playersRoot && window.ReactDOM && ReactDOM.createRoot) {
             ReactDOM.createRoot(playersRoot).render(<PlayersReactTable />);
+        }
+
+        const mercatoRoot = document.getElementById('mercato-react-root');
+        if (mercatoRoot && window.ReactDOM && ReactDOM.createRoot) {
+            ReactDOM.createRoot(mercatoRoot).render(<MercatoReactView />);
+        }
+
+        const newsRoot = document.getElementById('news-react-root');
+        if (newsRoot && window.ReactDOM && ReactDOM.createRoot) {
+            ReactDOM.createRoot(newsRoot).render(
+                <NewsReactView />
+            );
         }
 
         const combosRoot = document.getElementById('combos-react-root');
