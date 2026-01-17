@@ -390,6 +390,18 @@ def print_summary(results: List[Dict[str, object]]) -> None:
         )
 
 
+def run_scripts(scripts: Sequence[str]) -> None:
+    for script in scripts:
+        log(f"[PIPELINE] Execution: {script}")
+        result = subprocess.run(["python", script], text=True, capture_output=True)
+        if result.stdout:
+            log(result.stdout.strip())
+        if result.stderr:
+            log(result.stderr.strip())
+        if result.returncode != 0:
+            log(f"[AVERTISSEMENT] Script échoué (continuation): {script}")
+
+
 def run_git_pipeline() -> None:
     log("\n=== GIT: PREPARATION DU DEPOT ===")
 
@@ -581,6 +593,27 @@ def main() -> None:
         )
 
     print_summary(results)
+
+    try:
+        run_scripts(
+            [
+                "scraping/soccerdata_ligue1.py",
+                "analysis/clean_matches.py",
+                "analysis/match_rating.py",
+                "analysis/match_score_final.py",
+                "scraping/soccerdata_player_minutes_ol.py",
+                "analysis/step0_create_match_key.py",
+                "analysis/step1_build_lineups.py",
+                "analysis/step2_generate_combos.py",
+                "analysis/step2_create_combos_per_match.py",
+                "analysis/step3_analyze_combos.py",
+                "analysis/analyze_best_combos.py",
+                "analysis/stepA_create_league1_standings.py",
+            ]
+        )
+    except Exception as exc:
+        log(f"[AVERTISSEMENT] Etape analyse interrompue: {exc}")
+        sys.exit(1)
 
     try:
         run_git_pipeline()

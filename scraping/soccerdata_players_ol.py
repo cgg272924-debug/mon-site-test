@@ -1,16 +1,16 @@
 from soccerdata import FBref
 import pandas as pd
 from pathlib import Path
+from datetime import date
 
 print("=== TELECHARGEMENT STATS JOUEURS OL (FBref via soccerdata) ===")
 
 RAW_DIR = Path("data/raw")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-fbref = FBref(
-    leagues="FRA-Ligue 1",
-    seasons=2025
-)
+today = date.today()
+season_year = today.year if today.month >= 7 else today.year - 1
+fbref = FBref(leagues="FRA-Ligue 1", seasons=season_year)
 
 df = fbref.read_player_season_stats(stat_type="standard")
 
