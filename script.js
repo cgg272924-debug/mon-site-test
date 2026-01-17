@@ -340,6 +340,12 @@ document.querySelectorAll('tbody tr').forEach(row => {
 // CHARGEMENT DES DONNÉES CSV
 // ============================================
 
+// Fonction utilitaire pour éviter le cache sur les CSV
+function cacheBust(url) {
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}_=${Date.now()}`;
+}
+
 // Fonction pour parser un CSV (gère les valeurs entre guillemets)
 function parseCSV(text) {
     const lines = text.trim().split('\n');
@@ -399,7 +405,7 @@ function getResultBadge(result) {
 // Charger les matchs
 async function loadMatches() {
     try {
-        const response = await fetch('data/processed/ol_match_score_final.csv');
+        const response = await fetch(cacheBust('data/processed/ol_match_score_final.csv'));
         const text = await response.text();
         const matches = parseCSV(text);
         
@@ -456,7 +462,7 @@ async function loadMatches() {
 // Charger les joueurs
 async function loadPlayers() {
     try {
-        const response = await fetch('data/processed/ol_key_players.csv');
+        const response = await fetch(cacheBust('data/processed/ol_key_players.csv'));
         const text = await response.text();
         const players = parseCSV(text);
         
@@ -507,7 +513,7 @@ async function loadPlayers() {
 // Charger les compositions
 async function loadLineups() {
     try {
-        const response = await fetch('data/processed/ol_lineups_by_match.csv');
+        const response = await fetch(cacheBust('data/processed/ol_lineups_by_match.csv'));
         const text = await response.text();
         const lineups = parseCSV(text);
         
@@ -560,7 +566,7 @@ async function loadLineups() {
 async function loadStats() {
     try {
         // Charger les stats des matchs
-        const matchesResponse = await fetch('data/processed/ol_match_score_final.csv');
+        const matchesResponse = await fetch(cacheBust('data/processed/ol_match_score_final.csv'));
         const matchesText = await matchesResponse.text();
         const matches = parseCSV(matchesText);
         
@@ -586,7 +592,7 @@ async function loadStats() {
         }
         
         try {
-            const combosResponse = await fetch('data/processed/ol_best_combos_ALL_3_to_11.csv');
+            const combosResponse = await fetch(cacheBust('data/processed/ol_best_combos_ALL_3_to_11.csv'));
             const combosText = await combosResponse.text();
             const rawCombos = parseCSV(combosText);
             
@@ -644,7 +650,7 @@ async function loadStats() {
         }
 
         try {
-            const olStatsResponse = await fetch('data/ol_stats.csv');
+            const olStatsResponse = await fetch(cacheBust('data/ol_stats.csv'));
             const olStatsText = await olStatsResponse.text();
             const olStatsRows = parseCSV(olStatsText);
             const olStatsDiv = document.getElementById('ol-fbref-stats');
@@ -721,7 +727,7 @@ async function loadStandings() {
     try {
         let fbrefOk = false;
         try {
-            const fbref = await fetch('data/ligue1_standings.csv');
+            const fbref = await fetch(cacheBust('data/ligue1_standings.csv'));
             if (fbref.ok) {
                 const fbText = await fbref.text();
                 const fbRows = parseCSV(fbText);
@@ -802,7 +808,7 @@ async function loadStandings() {
             return;
         }
 
-        const response = await fetch('data/processed/league1_standings_home_away.csv');
+        const response = await fetch(cacheBust('data/processed/league1_standings_home_away.csv'));
         const text = await response.text();
         const standings = parseCSV(text);
         
@@ -1035,4 +1041,320 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadStandings();
     initStandingsTabs();
+    initMatchAnalysis();
+    loadTeamStyles();
 });
+
+// --- Match Analysis Logic ---
+
+async function initMatchAnalysis() {
+    const btnAnalyze = document.getElementById('btn-analyze');
+    if (!btnAnalyze) return;
+
+    // Load data once
+    let standingsData = [];
+    try {
+        const url = cacheBust('data/processed/league1_standings_home_away.csv');
+        const response = await fetch(url);
+        if (response.ok) {
+            const text = await response.text();
+            standingsData = parseCSV(text);
+            populateOpponentDropdown(standingsData);
+        }
+    } catch (e) {
+        console.error("Error loading standings for analysis:", e);
+    }
+
+    btnAnalyze.addEventListener('click', () => {
+        const opponentName = document.getElementById('analysis-opponent').value;
+        const location = document.getElementById('analysis-location').value;
+        const resultsContainer = document.getElementById('analysis-results');
+        
+        if (resultsContainer) {
+            resultsContainer.classList.remove('hidden');
+            analyzeMatch(opponentName, location, standingsData);
+            
+            // Scroll to results
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+}
+
+function populateOpponentDropdown(data) {
+    const select = document.getElementById('analysis-opponent');
+    if (!select || !data || data.length === 0) return;
+    
+    // Sort teams alphabetically
+    const teams = data
+        .map(row => row.team)
+        .filter(t => t && !t.includes('Lyon') && !t.includes('Olympique Lyonnais')) // Filter out OL
+        .sort();
+    
+    // Keep existing options if needed, but rebuilding is cleaner
+    // However, we want to keep the hardcoded ones as fallback or priority?
+    // Let's clear and rebuild
+    select.innerHTML = '';
+    
+    teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        option.textContent = team;
+        if (team === 'Brest') option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+function analyzeMatch(opponentName, location, data) {
+    // Find OL and Opponent rows
+    const olRow = data.find(row => row.team.includes('Lyon') || row.team.includes('Olympique Lyonnais'));
+    const oppRow = data.find(row => row.team === opponentName);
+    
+    if (!olRow || !oppRow) {
+        console.error("Teams not found");
+        return;
+    }
+
+    const isOlHome = location === 'home';
+    
+    // Stats extraction helper
+    const getStat = (row, homeKey, awayKey, generalKey) => {
+        if (location === 'home') {
+            // If OL is Home, we want OL Home stats
+            // If Opponent is Home (OL Away), we want Opp Home stats
+            // Wait, logic depends on who 'row' is.
+            // But here we want:
+            // OL Stats for THIS match condition (Home or Away)
+            // Opp Stats for THIS match condition (Away or Home)
+        }
+        // Simpler: Just extract all 3 values and let logic decide
+        return {
+            home: parseFloat(row[homeKey]),
+            away: parseFloat(row[awayKey]),
+            general: parseFloat(row[generalKey])
+        };
+    };
+
+    // Columns map (based on CSV header from previous Read)
+    // rank,team,matches,wins,draws,losses,goals_for,goals_against,goal_difference,points,points_per_match,win_rate,goals_for_per_match,goals_against_per_match
+    // home_... away_...
+    
+    // Extract Stats for current context
+    // OL
+    const olContext = isOlHome ? 'home' : 'away';
+    const olAttack = parseFloat(olRow[`${olContext}_goals_for_per_match`]) || parseFloat(olRow.goals_for_per_match);
+    const olDefense = parseFloat(olRow[`${olContext}_goals_against_per_match`]) || parseFloat(olRow.goals_against_per_match);
+    const olPPM = parseFloat(olRow[`${olContext}_points_per_match`]) || parseFloat(olRow.points_per_match);
+    const olRank = parseInt(olRow.rank);
+
+    // Opponent (Opposite context)
+    const oppContext = isOlHome ? 'away' : 'home';
+    const oppAttack = parseFloat(oppRow[`${oppContext}_goals_for_per_match`]) || parseFloat(oppRow.goals_for_per_match);
+    const oppDefense = parseFloat(oppRow[`${oppContext}_goals_against_per_match`]) || parseFloat(oppRow.goals_against_per_match);
+    const oppPPM = parseFloat(oppRow[`${oppContext}_points_per_match`]) || parseFloat(oppRow.points_per_match);
+    const oppRank = parseInt(oppRow.rank);
+
+    // Update UI Header
+    document.getElementById('ol-rank').textContent = `${olRank}${olRank === 1 ? 'er' : 'ème'} (Ligue 1)`;
+    document.getElementById('opponent-name').textContent = opponentName;
+    document.getElementById('opponent-rank').textContent = `${oppRank}${oppRank === 1 ? 'er' : 'ème'} (Ligue 1)`;
+
+    // Prediction Logic
+    let winProb = 50;
+    
+    // Rank impact (Lower rank is better)
+    // If OL is 5 and Opp is 10, diff is 5 (positive for OL)
+    const rankDiff = oppRank - olRank;
+    winProb += rankDiff * 2;
+    
+    // Location impact
+    winProb += isOlHome ? 10 : -10;
+    
+    // Form impact (PPM)
+    const ppmDiff = olPPM - oppPPM;
+    winProb += ppmDiff * 20; // 1 PPM diff = 20% swing
+    
+    // Clamp
+    winProb = Math.min(95, Math.max(5, Math.round(winProb)));
+    
+    // Update Win Prob UI
+    document.getElementById('prob-win').textContent = `${winProb}%`;
+    const probBar = document.getElementById('prob-bar');
+    probBar.style.width = `${winProb}%`;
+    probBar.className = `h-2 rounded-full ${winProb >= 50 ? 'bg-blue-500' : 'bg-red-500'}`;
+
+    // Score Prediction
+    // OL Score = (OL Attack + Opp Defense) / 2
+    // Opp Score = (Opp Attack + OL Defense) / 2
+    // Add randomness or slight adjustment
+    const olExpectedGoals = (olAttack + oppDefense) / 2;
+    const oppExpectedGoals = (oppAttack + olDefense) / 2;
+    
+    const olScore = Math.round(olExpectedGoals);
+    const oppScore = Math.round(oppExpectedGoals);
+    
+    document.getElementById('pred-score').textContent = `${olScore} - ${oppScore}`;
+    document.getElementById('pred-xg').textContent = olExpectedGoals.toFixed(2);
+    
+    // Form Icons
+    const formContainer = document.getElementById('form-icons');
+    formContainer.innerHTML = generateFormIcons(olPPM);
+
+    // Comparatives
+    updateComparison('attack', olAttack, oppAttack);
+    updateComparison('defense', olDefense, oppDefense, true);
+    updateComparison('ppm', olPPM, oppPPM);
+}
+
+function updateComparison(type, val1, val2, lowerIsBetter = false) {
+    const el1 = document.getElementById(`comp-ol-${type}`);
+    const el2 = document.getElementById(`comp-opp-${type}`);
+    
+    if (el1) el1.textContent = val1.toFixed(2);
+    if (el2) el2.textContent = val2.toFixed(2);
+    
+    const total = val1 + val2;
+    const pct1 = total > 0 ? (val1 / total) * 100 : 50;
+    const pct2 = total > 0 ? (val2 / total) * 100 : 50;
+    
+    const bar1 = document.getElementById(`bar-${type}-ol`);
+    const bar2 = document.getElementById(`bar-${type}-opp`);
+    
+    if (bar1) bar1.style.width = `${pct1}%`;
+    if (bar2) bar2.style.width = `${pct2}%`;
+}
+
+function generateFormIcons(ppm) {
+    let html = '';
+    // Generate 5 icons based on PPM
+    // PPM 3.0 = W W W W W
+    // PPM 1.0 = D L D L D
+    // Use a probabilistic approach
+    const winProb = ppm / 3;
+    const drawProb = (3 - ppm) / 4; // Arbitrary
+    
+    for (let i = 0; i < 5; i++) {
+        const r = Math.random();
+        let badgeClass = 'badge-loss';
+        let text = 'D';
+        
+        if (r < winProb) {
+            badgeClass = 'badge-win';
+            text = 'V';
+        } else if (r < winProb + drawProb) {
+            badgeClass = 'badge-draw';
+            text = 'N';
+        }
+        
+        html += `<span class="badge ${badgeClass} w-8 h-8 flex items-center justify-center rounded-full text-xs text-white font-bold" style="background-color: ${badgeClass === 'badge-win' ? '#10B981' : badgeClass === 'badge-draw' ? '#F59E0B' : '#EF4444'}">${text}</span>`;
+    }
+    return html;
+}
+
+function loadTeamStyles() {
+    const select = document.getElementById('styles-context');
+    const lowEl = document.getElementById('style-low-block');
+    const compactEl = document.getElementById('style-compact');
+    const highEl = document.getElementById('style-high-line');
+    const spacesEl = document.getElementById('style-spaces');
+    if (!select || !lowEl || !compactEl || !highEl || !spacesEl) return;
+    let data = [];
+    let adv = [];
+    let hasAdvanced = false;
+    fetch(cacheBust('data/processed/ligue1_team_advanced_stats.csv'))
+        .then(r => {
+            if (!r.ok) throw new Error();
+            return r.text();
+        })
+        .then(t => {
+            adv = parseCSV(t).filter(r => r.team && !/Lyon/i.test(r.team));
+            hasAdvanced = adv && adv.length > 0;
+        })
+        .catch(() => {})
+        .finally(() => {
+            fetch(cacheBust('data/processed/league1_standings_home_away.csv'))
+                .then(r => r.text())
+                .then(t => {
+                    data = parseCSV(t).filter(r => r.team && !/Lyon/i.test(r.team));
+                    renderStyles();
+                    select.addEventListener('change', renderStyles);
+                })
+                .catch(() => {});
+        });
+    function renderStyles() {
+        const ctx = select.value;
+        const getStd = (row) => {
+            if (ctx === 'home') {
+                return {
+                    gf: parseFloat(row.home_goals_for_per_match),
+                    ga: parseFloat(row.home_goals_against_per_match),
+                    wr: parseFloat(row.home_win_rate)
+                };
+            } else if (ctx === 'away') {
+                return {
+                    gf: parseFloat(row.away_goals_for_per_match),
+                    ga: parseFloat(row.away_goals_against_per_match),
+                    wr: parseFloat(row.away_win_rate)
+                };
+            } else {
+                return {
+                    gf: parseFloat(row.goals_for_per_match),
+                    ga: parseFloat(row.goals_against_per_match),
+                    wr: parseFloat(row.win_rate)
+                };
+            }
+        };
+        const getAdv = (teamName) => {
+            const row = adv.find(r => r.team === teamName);
+            if (!row) return null;
+            return {
+                poss: parseFloat(row.possession_pct),
+                sh90: parseFloat(row.shots_per90),
+                xgpm: parseFloat(row.xg_per_match),
+                xgapm: parseFloat(row.xga_per_match)
+            };
+        };
+        const low = [];
+        const compact = [];
+        const high = [];
+        const spaces = [];
+        data.forEach(row => {
+            const s = getStd(row);
+            const name = row.team;
+            if (!isFinite(s.gf) || !isFinite(s.ga)) return;
+            let isLow = s.gf <= 1.3 && s.ga <= 1.1;
+            let isCompact = s.ga <= 1.0 && s.gf > 1.3 && s.gf <= 1.6;
+            let isHigh = s.gf >= 1.7 && (s.ga >= 1.2 || s.wr >= 65);
+            let isSpaces = s.ga >= 1.5 || (ctx === 'away' && s.ga >= 1.7);
+            if (hasAdvanced) {
+                const a = getAdv(name);
+                if (a) {
+                    isLow = (a.poss <= 46 && a.xgapm <= 1.1) || isLow;
+                    isCompact = (a.xgapm <= 1.0 && a.poss >= 46 && a.poss <= 53) || isCompact;
+                    isHigh = (a.poss >= 54 && a.sh90 >= 14 && a.xgpm >= 1.6) || isHigh;
+                    isSpaces = (a.xgapm >= 1.4) || isSpaces;
+                }
+            }
+            if (isLow) low.push({name, s});
+            else if (isCompact) compact.push({name, s});
+            if (isHigh) high.push({name, s});
+            if (isSpaces) spaces.push({name, s});
+        });
+        const sortFn = (a,b)=> (b.s.gf - a.s.gf) || (a.name.localeCompare(b.name));
+        low.sort(sortFn);
+        compact.sort(sortFn);
+        high.sort(sortFn);
+        spaces.sort((a,b)=> (b.s.ga - a.s.ga) || (a.name.localeCompare(b.name)));
+        const renderList = (el, arr) => {
+            el.innerHTML = arr.map(item => 
+                `<li class="flex items-center justify-between bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2">
+                    <span class="font-medium">${item.name}</span>
+                    <span class="text-xs text-gray-400">GF/M ${item.s.gf.toFixed(2)} • GA/M ${item.s.ga.toFixed(2)}</span>
+                </li>`
+            ).join('');
+        };
+        renderList(lowEl, low.slice(0, 10));
+        renderList(compactEl, compact.slice(0, 10));
+        renderList(highEl, high.slice(0, 10));
+        renderList(spacesEl, spaces.slice(0, 10));
+    }
+}

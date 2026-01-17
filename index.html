@@ -24,6 +24,8 @@
                     <li><a href="#matches" class="nav-link">Matchs</a></li>
                     <li><a href="#players" class="nav-link">Joueurs</a></li>
                     <li><a href="#lineups" class="nav-link">Compositions</a></li>
+                    <li><a href="#styles" class="nav-link">Styles</a></li>
+                    <li><a href="#match-analysis" class="nav-link">Analyse Match</a></li>
                     <li><a href="#stats" class="nav-link">Statistiques</a></li>
                 </ul>
                 <div class="hamburger">
@@ -324,6 +326,172 @@
             </div>
         </section>
 
+        <!-- Section Analyse Match -->
+        <section id="match-analysis" class="section-content">
+            <div class="container">
+                <h2 class="section-title">Analyse d'Avant-Match</h2>
+                
+                <!-- Contrôles de sélection -->
+                <div class="analysis-controls card-bg p-6 rounded-xl mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Adversaire</label>
+                            <select id="analysis-opponent" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="Brest">Brest</option>
+                                <option value="Paris Saint Germain">Paris SG</option>
+                                <option value="Marseille">Marseille</option>
+                                <option value="Monaco">Monaco</option>
+                                <option value="Lille">Lille</option>
+                                <option value="Lens">Lens</option>
+                                <option value="Nice">Nice</option>
+                                <option value="Rennes">Rennes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Lieu</label>
+                            <select id="analysis-location" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                                <option value="home">Domicile (Groupama Stadium)</option>
+                                <option value="away">Extérieur</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex items-end">
+                            <button id="btn-analyze" class="w-full btn btn-primary">Lancer l'Analyse</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Résultats de l'analyse -->
+                <div id="analysis-results" class="hidden space-y-8">
+                    <!-- En-tête du match -->
+                    <div class="match-header text-center mb-8">
+                        <div class="flex items-center justify-center gap-8">
+                            <div class="team-display">
+                                <div class="text-4xl mb-2">🦁</div>
+                                <h3 class="text-xl font-bold">Olympique Lyonnais</h3>
+                                <p class="text-gray-400" id="ol-rank">Loading...</p>
+                            </div>
+                            <div class="vs-badge bg-slate-700 px-4 py-2 rounded-full font-bold">VS</div>
+                            <div class="team-display">
+                                <div class="text-4xl mb-2">🛡️</div>
+                                <h3 class="text-xl font-bold" id="opponent-name">Adversaire</h3>
+                                <p class="text-gray-400" id="opponent-rank">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cartes de stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 class="text-gray-400 text-sm mb-1">Probabilité Victoire OL</h4>
+                            <div class="text-2xl font-bold text-blue-400" id="prob-win">--%</div>
+                            <div class="w-full bg-slate-700 h-2 rounded-full mt-2">
+                                <div id="prob-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 class="text-gray-400 text-sm mb-1">Score Prédit</h4>
+                            <div class="text-2xl font-bold text-white" id="pred-score">-- - --</div>
+                            <p class="text-xs text-gray-500 mt-1">Basé sur la forme récente</p>
+                        </div>
+                        <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 class="text-gray-400 text-sm mb-1">Buts Attendus (xG)</h4>
+                            <div class="text-2xl font-bold text-green-400" id="pred-xg">--</div>
+                            <p class="text-xs text-gray-500 mt-1">Moyenne offensive</p>
+                        </div>
+                        <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h4 class="text-gray-400 text-sm mb-1">Forme (5 derniers)</h4>
+                            <div class="flex gap-1 mt-2 justify-center" id="form-icons">
+                                <!-- W D L W W -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analyse détaillée -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="analysis-card bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <span>📊</span> Comparatif Direct
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="comparison-row">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span>Attaque (Buts/M)</span>
+                                        <span class="text-gray-400">vs</span>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-1/2 text-right font-bold text-blue-400" id="comp-ol-attack">--</div>
+                                        <div class="w-1/2 font-bold text-red-400" id="comp-opp-attack">--</div>
+                                    </div>
+                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-700 mt-1">
+                                        <div id="bar-attack-ol" class="bg-blue-500 h-full" style="width: 50%"></div>
+                                        <div id="bar-attack-opp" class="bg-red-500 h-full" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="comparison-row">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span>Défense (Buts Enc./M)</span>
+                                        <span class="text-gray-400">vs</span>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-1/2 text-right font-bold text-blue-400" id="comp-ol-defense">--</div>
+                                        <div class="w-1/2 font-bold text-red-400" id="comp-opp-defense">--</div>
+                                    </div>
+                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-700 mt-1">
+                                        <div id="bar-defense-ol" class="bg-blue-500 h-full" style="width: 50%"></div>
+                                        <div id="bar-defense-opp" class="bg-red-500 h-full" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="comparison-row">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span>Points par Match</span>
+                                        <span class="text-gray-400">vs</span>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-1/2 text-right font-bold text-blue-400" id="comp-ol-ppm">--</div>
+                                        <div class="w-1/2 font-bold text-red-400" id="comp-opp-ppm">--</div>
+                                    </div>
+                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-700 mt-1">
+                                        <div id="bar-ppm-ol" class="bg-blue-500 h-full" style="width: 50%"></div>
+                                        <div id="bar-ppm-opp" class="bg-red-500 h-full" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analysis-card bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <span>🎯</span> Joueurs à Suivre
+                            </h3>
+                            <div class="space-y-4" id="key-players-list">
+                                <div class="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">OL</div>
+                                        <div>
+                                            <div class="font-bold">Meilleur Buteur</div>
+                                            <div class="text-xs text-gray-400">Potentiel offensif élevé</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-green-400 font-bold">Lacazette / Fofana</span>
+                                </div>
+                                <div class="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">OL</div>
+                                        <div>
+                                            <div class="font-bold">Impact Créatif</div>
+                                            <div class="text-xs text-gray-400">Création d'occasions</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-green-400 font-bold">Cherki / Tolisso</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Section Compositions -->
         <section id="lineups" class="section-content">
             <div class="container">
@@ -369,6 +537,38 @@
             </div>
         </section>
 
+        <section id="styles" class="section-content">
+            <div class="container">
+                <h2 class="section-title">Styles d'Équipes</h2>
+                <div class="card-bg p-6 rounded-xl mb-6">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Contexte</label>
+                    <select id="styles-context" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="general">Général</option>
+                        <option value="home">Domicile</option>
+                        <option value="away">Extérieur</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="stat-card-large">
+                        <h3>Bloc bas</h3>
+                        <ul id="style-low-block" class="space-y-2"></ul>
+                    </div>
+                    <div class="stat-card-large">
+                        <h3>Bloc serré</h3>
+                        <ul id="style-compact" class="space-y-2"></ul>
+                    </div>
+                    <div class="stat-card-large">
+                        <h3>Joue haut</h3>
+                        <ul id="style-high-line" class="space-y-2"></ul>
+                    </div>
+                    <div class="stat-card-large">
+                        <h3>Laisse des espaces</h3>
+                        <ul id="style-spaces" class="space-y-2"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="combos-advanced" class="section-content">
             <div class="container">
                 <h2 class="section-title">Combinaisons Avancées de Joueurs</h2>
@@ -400,7 +600,8 @@
 
                 async function load() {
                     try {
-                        const res = await fetch(url);
+                        const bustedUrl = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+                        const res = await fetch(bustedUrl);
                         if (!res.ok) {
                             throw new Error('Erreur réseau');
                         }

@@ -30,6 +30,47 @@ def get_team_from_match(row):
     if not match_report or match_report == "nan":
         return None
     
+    TEAM_MAP = {
+        "paris-saint-germain": "Paris Saint Germain",
+        "paris-fc": "Paris FC",
+        "le-havre": "Le Havre",
+        "olympique-lyonnais": "Lyon",
+        "lyon": "Lyon",
+        "olympique-marseille": "Marseille",
+        "marseille": "Marseille",
+        "nice": "Nice",
+        "lille": "Lille",
+        "rennes": "Rennes",
+        "strasbourg": "Strasbourg",
+        "monaco": "Monaco",
+        "nantes": "Nantes",
+        "auxerre": "Auxerre",
+        "metz": "Metz",
+        "angers": "Angers",
+        "lorient": "Lorient",
+        "lens": "Lens",
+        "toulouse": "Toulouse",
+        "brest": "Brest",
+    }
+
+    def normalize_team_from_parts(parts):
+        if not parts:
+            return None
+        # Essayer suffixes de longueur 3,2,1 pour ignorer les prefixes d'événement
+        for k in range(min(3, len(parts)), 0, -1):
+            candidate = "-".join(parts[-k:]).lower()
+            if candidate in TEAM_MAP:
+                return TEAM_MAP[candidate]
+        # Sinon, tenter avec tout
+        candidate_full = "-".join(parts).lower()
+        if candidate_full in TEAM_MAP:
+            return TEAM_MAP[candidate_full]
+        # Dernier recours: dernier token capitalisé
+        last = parts[-1].replace("-", " ").strip()
+        if last:
+            return last.title()
+        return None
+    
     try:
         # Format: /en/matches/xxx/Equipe1-Equipe2-Mois-Jour-Annee-Ligue-1
         # Exemple: /en/matches/c69996e3/Angers-Paris-FC-August-17-2025-Ligue-1
@@ -44,6 +85,9 @@ def get_team_from_match(row):
         
         # Maintenant on a: Equipe1-Equipe2 (avec tirets)
         # Il faut séparer les deux équipes en utilisant l'opponent
+        # Supprimer un éventuel préfixe d'événement spécifique
+        # Exemple connu: "Choc-des-Olympiques-"
+        url_part = re.sub(r'^Choc-des-Olympiques-', '', url_part)
         parts = url_part.split("-")
         opponent_parts = opponent.replace(" ", "-").split("-")
         
@@ -65,8 +109,9 @@ def get_team_from_match(row):
                 team_parts = parts[opponent_start_idx + len(opponent_parts):]
             
             if team_parts:
-                team = " ".join(team_parts)
-                return team.strip()
+                team_norm = normalize_team_from_parts(team_parts)
+                if team_norm:
+                    return team_norm
         
         # Si on n'a pas trouvé avec l'opponent, utiliser une heuristique simple
         # Pour la plupart des cas, si venue=Home, l'équipe est au début
@@ -83,16 +128,20 @@ def get_team_from_match(row):
                 potential_opponent = " ".join(parts[i:]).lower()
                 if opponent_lower in potential_opponent or potential_opponent in opponent_lower:
                     if venue == "Home":
-                        return " ".join(parts[:i]).strip()
+                        t = normalize_team_from_parts(parts[:i]) or " ".join(parts[:i]).strip()
+                        return t
                     else:
-                        return " ".join(parts[i:]).strip()
+                        t = normalize_team_from_parts(parts[i:]) or " ".join(parts[i:]).strip()
+                        return t
             
             # Si toujours pas trouvé, utiliser une séparation au milieu
             mid = len(parts) // 2
             if venue == "Home":
-                return " ".join(parts[:mid]).strip()
+                t = normalize_team_from_parts(parts[:mid]) or " ".join(parts[:mid]).strip()
+                return t
             else:
-                return " ".join(parts[mid:]).strip()
+                t = normalize_team_from_parts(parts[mid:]) or " ".join(parts[mid:]).strip()
+                return t
                 
     except Exception as e:
         print(f"Erreur extraction equipe pour {match_report}: {e}")
