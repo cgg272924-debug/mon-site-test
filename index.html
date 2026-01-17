@@ -44,6 +44,7 @@
                     <span class="gradient-text">Analyse Avancée</span>
                     <br>des Matchs OL
                 </h1>
+                <p class="text-sm text-gray-400 mt-1">Saison 2025–2026</p>
                 <p class="hero-description">
                     Découvrez des insights détaillés sur les performances, les compositions d'équipe 
                     et l'impact des joueurs avec notre plateforme d'analyse de données.
@@ -73,28 +74,35 @@
             <div class="stat-card">
                 <div class="stat-icon">🏆</div>
                 <div class="stat-content">
-                    <h3 class="stat-value">1er</h3>
-                    <p class="stat-label">Classement Ligue 1</p>
+                    <h3 class="stat-value" id="hero-rank-value">--</h3>
+                    <p class="stat-label" id="hero-rank-label">Classement Ligue 1</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🦁</div>
+                <div class="stat-content">
+                    <h3 class="stat-value" id="hero-ol-rank-value">--</h3>
+                    <p class="stat-label">Position OL</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">⚽</div>
                 <div class="stat-content">
-                    <h3 class="stat-value">38</h3>
+                    <h3 class="stat-value" id="hero-matches-value">--</h3>
                     <p class="stat-label">Matchs Analysés</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">⭐</div>
                 <div class="stat-content">
-                    <h3 class="stat-value">4.8</h3>
-                    <p class="stat-label">Note Moyenne</p>
+                    <h3 class="stat-value" id="hero-rating-value">--</h3>
+                    <p class="stat-label">Points OL</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">🔥</div>
                 <div class="stat-content">
-                    <h3 class="stat-value">15</h3>
+                    <h3 class="stat-value" id="hero-combos-value">--</h3>
                     <p class="stat-label">Combos Optimales</p>
                 </div>
             </div>
@@ -176,24 +184,9 @@
                                     <th>Note</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="preview-matches-tbody">
                                 <tr>
-                                    <td>2024-01-15</td>
-                                    <td>PSG</td>
-                                    <td><span class="badge badge-win">Victoire</span></td>
-                                    <td>4.8</td>
-                                </tr>
-                                <tr>
-                                    <td>2024-01-10</td>
-                                    <td>Marseille</td>
-                                    <td><span class="badge badge-draw">Nul</span></td>
-                                    <td>4.2</td>
-                                </tr>
-                                <tr>
-                                    <td>2024-01-05</td>
-                                    <td>Monaco</td>
-                                    <td><span class="badge badge-win">Victoire</span></td>
-                                    <td>4.9</td>
+                                    <td colspan="4" class="loading">Chargement des données...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -501,9 +494,9 @@
                         <thead>
                             <tr>
                                 <th>Match</th>
-                                <th>Joueur</th>
-                                <th>Position</th>
-                                <th>Minutes Jouées</th>
+                                <th>Adversaire</th>
+                                <th>Score</th>
+                                <th>Voir Composition</th>
                             </tr>
                         </thead>
                         <tbody id="lineups-tbody">

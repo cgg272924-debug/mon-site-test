@@ -1043,3 +1043,136 @@ main {
     font-weight: 600;
     font-size: 1rem;
 }
+
+.pitch {
+    position: relative;
+    width: 100%;
+    padding-top: 140%;
+    background: radial-gradient(circle at center, #15803d 0%, #065f46 40%, #064e3b 75%, #022c22 100%);
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    margin: 1.5rem 0;
+    overflow: hidden;
+}
+
+ 
+
+.pitch-markings {
+    position: absolute;
+    inset: 0;
+}
+
+.center-circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.penalty-area {
+    position: absolute;
+    left: 12%;
+    width: 76%;
+    height: 26%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.penalty-top { top: 0; }
+.penalty-bottom { bottom: 0; }
+
+.six-yard {
+    position: absolute;
+    left: 20%;
+    width: 60%;
+    height: 12%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.six-top { top: 0; }
+.six-bottom { bottom: 0; }
+
+.goal {
+    position: absolute;
+    left: 45%;
+    width: 10%;
+    height: 2%;
+    background: rgba(255, 255, 255, 0.3);
+}
+.goal-top { top: 0; }
+.goal-bottom { bottom: 0; }
+
+.player-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    min-width: 70px;
+    pointer-events: none;
+}
+
+.player-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 60px;
+}
+
+.player-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #3b82f6, #22c55e);
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.7), 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.player-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    color: #e5e7eb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    max-width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-pos {
+    font-size: 0.65rem;
+    color: #d1d5db;
+    opacity: 0.9;
+}
+
+.lineup-header {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.lineup-header p {
+    color: var(--text-secondary);
+}
+
+.lineup-header strong {
+    color: var(--text-primary);
+}
+
+.lineup-list {
+    margin-top: 1rem;
+    margin-left: 1.25rem;
+}
+
+.lineup-list li {
+    margin-bottom: 0.35rem;
+}
+
+.formation-label {
+    margin-top: 0.75rem;
+    color: var(--text-secondary);
+}

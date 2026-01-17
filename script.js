@@ -510,47 +510,482 @@ async function loadPlayers() {
     }
 }
 
-// Charger les compositions
+function parseLineupMatchKey(rawKey) {
+    const value = (rawKey || '').trim();
+    if (!value) return null;
+    const firstSpace = value.indexOf(' ');
+    if (firstSpace === -1) {
+        return {
+            rawKey: value,
+            date: '',
+            opponent: '',
+            venue: '',
+            lookupKey: null,
+            label: value
+        };
+    }
+    const prefix = value.slice(0, firstSpace);
+    const rest = value.slice(firstSpace + 1);
+    const prefixParts = prefix.split('_');
+    const date = prefixParts.length > 1 ? prefixParts[1] : '';
+    let opponent = '';
+    let venue = '';
+    if (rest.startsWith('Lyon-')) {
+        opponent = rest.slice('Lyon-'.length);
+        venue = 'Home';
+    } else if (rest.endsWith('-Lyon')) {
+        opponent = rest.slice(0, rest.length - '-Lyon'.length);
+        venue = 'Away';
+    } else {
+        const hyphenIndex = rest.indexOf('-');
+        if (hyphenIndex !== -1) {
+            const firstTeam = rest.slice(0, hyphenIndex);
+            const secondTeam = rest.slice(hyphenIndex + 1);
+            if (firstTeam === 'Lyon') {
+                opponent = secondTeam;
+                venue = 'Home';
+            } else if (secondTeam === 'Lyon') {
+                opponent = firstTeam;
+                venue = 'Away';
+            }
+        }
+    }
+    const lookupKey = date && opponent ? `${date}_${opponent}` : null;
+    let label = value;
+    if (date && opponent) {
+        const formattedDate = formatDate(date);
+        if (venue === 'Home') {
+            label = `${formattedDate} • OL vs ${opponent}`;
+        } else if (venue === 'Away') {
+            label = `${formattedDate} • ${opponent} vs OL`;
+        } else {
+            label = `${formattedDate} • ${opponent}`;
+        }
+    }
+    return {
+        rawKey: value,
+        date,
+        opponent,
+        venue,
+        lookupKey,
+        label
+    };
+}
+
+function translatePositionFr(pos) {
+    const p = (pos || '').toUpperCase();
+    const primary = p.split(',')[0].trim();
+    const map = {
+        GK: 'G',
+        RB: 'DD',
+        LB: 'DG',
+        CB: 'DC',
+        RWB: 'DD',
+        LWB: 'DG',
+        DM: 'MDC',
+        CDM: 'MDC',
+        CM: 'MC',
+        AM: 'MOC',
+        CAM: 'MOC',
+        RW: 'AD',
+        LW: 'AG',
+        FW: 'BU',
+        ST: 'BU'
+    };
+    return map[primary] || primary || '-';
+}
+
+function buildLineupPitch(players) {
+    const toPrimary = x => (x || '').toUpperCase().split(',')[0].trim();
+    const data = players.map(p => ({
+        name: p.name || '',
+        pos: p.pos || '',
+        primary: toPrimary(p.pos || ''),
+        posFr: translatePositionFr(p.pos || '')
+    }));
+    const gk = data.filter(d => d.primary === 'GK');
+    const defenders = data.filter(d => ['RB', 'LB', 'CB', 'RWB', 'LWB'].includes(d.primary));
+    const midsDeep = data.filter(d => ['DM', 'CDM'].includes(d.primary));
+    const midsCentral = data.filter(d => ['CM'].includes(d.primary));
+    const midsAdvanced = data.filter(d => ['AM', 'CAM'].includes(d.primary));
+    const attackers = data.filter(d => ['RW', 'LW', 'FW', 'ST'].includes(d.primary));
+    function orderDef(defs) {
+        const lefts = defs.filter(d => ['LB', 'LWB'].includes(d.primary));
+        const rights = defs.filter(d => ['RB', 'RWB'].includes(d.primary));
+        const centers = defs.filter(d => d.primary === 'CB');
+        return [...lefts, ...centers, ...rights];
+    }
+    function orderAtt(atts) {
+        const lefts = atts.filter(d => d.primary === 'LW');
+        const centers = atts.filter(d => ['ST', 'FW'].includes(d.primary));
+        const rights = atts.filter(d => d.primary === 'RW');
+        return [...lefts, ...centers, ...rights];
+    }
+    function orderMid(mids) {
+        const d = midsDeep.slice();
+        const c = midsCentral.slice();
+        const a = midsAdvanced.slice();
+        return { deep: d, central: c, adv: a };
+    }
+    const defOrdered = orderDef(defenders);
+    const attOrdered = orderAtt(attackers);
+    const midGroups = orderMid(midsDeep.concat(midsCentral).concat(midsAdvanced));
+    const midCount = midGroups.deep.length + midGroups.central.length + midGroups.adv.length;
+    const formation = `${defOrdered.length}-${midCount}-${attOrdered.length}`;
+    const yAttack = 16;
+    const yMidAdv = 34;
+    const yMidDeep = 52;
+    const yDefense = 72;
+    const yGk = 90;
+    const marginX = 10;
+    function spreadXs(n, bias = 0) {
+        const step = (100 - marginX * 2) / (n + 1);
+        const xs = [];
+        for (let i = 1; i <= n; i++) {
+            xs.push(marginX + step * i + bias);
+        }
+        return xs;
+    }
+    function nodesFrom(line, y, bias = 0) {
+        const xs = spreadXs(line.length, bias);
+        return line.map((p, i) => ({
+            left: xs[i],
+            top: y,
+            name: p.name,
+            posFr: p.posFr
+        }));
+    }
+    const nodes = []
+        .concat(nodesFrom(attOrdered, yAttack))
+        .concat(nodesFrom(midGroups.adv, yMidAdv))
+        .concat(nodesFrom(midGroups.central, (yMidAdv + yMidDeep) / 2, 2))
+        .concat(nodesFrom(midGroups.deep, yMidDeep))
+        .concat(nodesFrom(defOrdered, yDefense))
+        .concat(nodesFrom(gk, yGk));
+    let html = `
+        <div class="pitch">
+            <div class="pitch-markings">
+                <div class="goal goal-top"></div>
+                <div class="penalty-area penalty-top"></div>
+                <div class="six-yard six-top"></div>
+                <div class="center-circle"></div>
+                <div class="goal goal-bottom"></div>
+                <div class="penalty-area penalty-bottom"></div>
+                <div class="six-yard six-bottom"></div>
+            </div>
+    `;
+    nodes.forEach(n => {
+        html += `
+            <div class="player-node" style="left:${n.left}%; top:${n.top}%">
+                <div class="player-dot"></div>
+                <div class="player-name">${n.name}</div>
+                <div class="player-pos">${n.posFr}</div>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    html += `<p class="formation-label"><strong>Formation estimée:</strong> ${formation}</p>`;
+    return html;
+}
+
+function buildLineupPitchWithFormation(players, formationStr) {
+    const toPrimary = x => (x || '').toUpperCase().split(',')[0].trim();
+    const data = players.map(p => ({
+        name: p.name || '',
+        pos: p.pos || '',
+        primary: toPrimary(p.pos || ''),
+        posFr: translatePositionFr(p.pos || '')
+    }));
+    const nums = (formationStr || '').split('-').map(n => parseInt(n, 10)).filter(n => !Number.isNaN(n));
+    const defCount = nums.length > 0 ? nums[0] : null;
+    const attCount = nums.length > 0 ? nums[nums.length - 1] : null;
+    const midCounts = nums.length > 2 ? nums.slice(1, nums.length - 1) : (nums.length === 2 ? [nums[1]] : []);
+    const isThreeBack = defCount === 3;
+    const gk = data.filter(d => d.primary === 'GK');
+    const defenders = data.filter(d => d.primary === 'CB')
+        .concat((defCount && defCount === 4) ? data.filter(d => ['RB', 'LB'].includes(d.primary)) : []);
+    let wingbacks = [];
+    if (isThreeBack) {
+        wingbacks = data.filter(d => ['LWB', 'RWB'].includes(d.primary));
+    }
+    const midsDeep = data.filter(d => ['DM', 'CDM'].includes(d.primary))
+        .concat(isThreeBack ? wingbacks : []);
+    const midsCentral = data.filter(d => ['CM'].includes(d.primary));
+    const midsAdvanced = data.filter(d => ['AM', 'CAM'].includes(d.primary));
+    const attackers = data.filter(d => ['RW', 'LW', 'FW', 'ST'].includes(d.primary));
+    function orderDef(defs) {
+        const lefts = data.filter(d => ['LB'].includes(d.primary));
+        const rights = data.filter(d => ['RB'].includes(d.primary));
+        const centers = defs.filter(d => d.primary === 'CB');
+        return defCount === 4 ? [...lefts, ...centers, ...rights] : centers;
+    }
+    function orderAtt(atts) {
+        const lefts = atts.filter(d => d.primary === 'LW');
+        const centers = atts.filter(d => ['ST', 'FW'].includes(d.primary));
+        const rights = atts.filter(d => d.primary === 'RW');
+        return [...lefts, ...centers, ...rights];
+    }
+    const defOrdered = orderDef(defenders);
+    const attOrdered = orderAtt(attackers);
+    const midDeepOrdered = midsDeep;
+    const midCentralOrdered = midsCentral;
+    const midAdvOrdered = midsAdvanced;
+    const formation = `${defOrdered.length}-${midDeepOrdered.length + midCentralOrdered.length + midAdvOrdered.length}-${attOrdered.length}`;
+    const yAttack = 16;
+    const yMidAdv = midCounts.length >= 2 ? 32 : (midCounts.length === 1 ? 38 : 34);
+    const yMidCentral = midCounts.length >= 3 ? 44 : (midCounts.length >= 2 ? 44 : 44);
+    const yMidDeep = 56;
+    const yDefense = 74;
+    const yGk = 90;
+    const marginX = 10;
+    function spreadXs(n, bias = 0) {
+        const step = (100 - marginX * 2) / (Math.max(n, 1) + 1);
+        const xs = [];
+        for (let i = 1; i <= Math.max(n, 1); i++) {
+            xs.push(marginX + step * i + bias);
+        }
+        return xs.slice(0, n);
+    }
+    function nodesFrom(line, y, bias = 0) {
+        const xs = spreadXs(line.length, bias);
+        return line.map((p, i) => ({
+            left: xs[i],
+            top: y,
+            name: p.name,
+            posFr: p.posFr
+        }));
+    }
+    const nodes = []
+        .concat(nodesFrom(attOrdered, yAttack))
+        .concat(nodesFrom(midAdvOrdered, yMidAdv))
+        .concat(nodesFrom(midCentralOrdered, yMidCentral, 2))
+        .concat(nodesFrom(midDeepOrdered, yMidDeep))
+        .concat(nodesFrom(defOrdered, yDefense))
+        .concat(nodesFrom(gk, yGk));
+    let html = `
+        <div class="pitch">
+            <div class="pitch-markings">
+                <div class="goal goal-top"></div>
+                <div class="penalty-area penalty-top"></div>
+                <div class="six-yard six-top"></div>
+                <div class="center-circle"></div>
+                <div class="goal goal-bottom"></div>
+                <div class="penalty-area penalty-bottom"></div>
+                <div class="six-yard six-bottom"></div>
+            </div>
+    `;
+    nodes.forEach(n => {
+        html += `
+            <div class="player-node" style="left:${n.left}%; top:${n.top}%">
+                <div class="player-dot"></div>
+                <div class="player-name">${n.name}</div>
+                <div class="player-pos">${n.posFr}</div>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    html += `<p class="formation-label"><strong>Formation estimée:</strong> ${formation}</p>`;
+    return html;
+}
 async function loadLineups() {
     try {
-        const response = await fetch(cacheBust('data/processed/ol_lineups_by_match.csv'));
-        const text = await response.text();
-        const lineups = parseCSV(text);
-        
+        const [lineupsResponse, lookupResponse, cleanResponse, minutesResponse] = await Promise.all([
+            fetch(cacheBust('data/processed/ol_lineups_by_match.csv')),
+            fetch(cacheBust('data/processed/match_lookup.csv')),
+            fetch(cacheBust('data/processed/ol_matches_clean.csv')),
+            fetch(cacheBust('data/processed/ol_player_minutes.csv'))
+        ]);
+        const lineupsText = await lineupsResponse.text();
+        const lookupText = await lookupResponse.text();
+        const cleanText = await cleanResponse.text();
+        const minutesText = await minutesResponse.text();
+        const lineups = parseCSV(lineupsText);
+        const lookupRows = parseCSV(lookupText);
+        const cleanRows = parseCSV(cleanText);
+        const minutesRows = parseCSV(minutesText);
         const tbody = document.getElementById('lineups-tbody');
         if (!tbody) return;
-        
         tbody.innerHTML = '';
-        
-        // Limiter à 100 lignes pour les performances
-        const limitedLineups = lineups.slice(0, 100);
-        
-        limitedLineups.forEach(lineup => {
+        const lookupMap = {};
+        lookupRows.forEach(row => {
+            const date = row.date || '';
+            const opponent = row.opponent || '';
+            if (!date || !opponent || opponent.toLowerCase() === 'lyon') {
+                return;
+            }
+            const key = `${date}_${opponent}`;
+            if (!lookupMap[key]) {
+                lookupMap[key] = row;
+            }
+        });
+        const cleanMap = {};
+        cleanRows.forEach(row => {
+            const date = row.date || '';
+            const opponent = row.opponent || '';
+            if (!date || !opponent || opponent.toLowerCase() === 'lyon') {
+                return;
+            }
+            const key = `${date}_${opponent}`;
+            if (!cleanMap[key]) {
+                cleanMap[key] = row;
+            }
+        });
+        const matchesMap = new Map();
+        lineups.forEach(item => {
+            const parsed = parseLineupMatchKey(item.match_key || '');
+            const groupKey = parsed && parsed.lookupKey ? parsed.lookupKey : item.match_key || '';
+            if (!groupKey) {
+                return;
+            }
+            if (!matchesMap.has(groupKey)) {
+                const meta = lookupMap[groupKey] || {};
+                const clean = cleanMap[groupKey] || {};
+                const date = parsed && parsed.date ? parsed.date : meta.date || '';
+                const opponent = parsed && parsed.opponent ? parsed.opponent : meta.opponent || '';
+                const venue = parsed && parsed.venue ? parsed.venue : meta.venue || '';
+                const points = meta.points !== undefined && meta.points !== '' ? parseFloat(meta.points) : null;
+                const scoreFinal = meta.score_final !== undefined && meta.score_final !== '' ? parseFloat(meta.score_final) : null;
+                const formation = clean.Formation || '';
+                const gf = clean.GF !== undefined && clean.GF !== '' ? parseFloat(clean.GF) : null;
+                const ga = clean.GA !== undefined && clean.GA !== '' ? parseFloat(clean.GA) : null;
+                const label = parsed && parsed.label ? parsed.label : groupKey;
+                matchesMap.set(groupKey, {
+                    key: groupKey,
+                    date,
+                    opponent,
+                    venue,
+                    points,
+                    scoreFinal,
+                    formation,
+                    gf,
+                    ga,
+                    label,
+                    players: []
+                });
+            }
+            const match = matchesMap.get(groupKey);
+            match.players.push({
+                name: item.player || '',
+                pos: item.pos || '',
+                minutes: parseInt(item.minutes_played || 0, 10) || 0
+            });
+        });
+        const minutesMap = {};
+        minutesRows.forEach(r => {
+            const gameStr = r.game || '';
+            if (!gameStr) return;
+            if (!minutesMap[gameStr]) minutesMap[gameStr] = [];
+            minutesMap[gameStr].push({
+                name: r.player || '',
+                pos: r.pos || '',
+                minutes: parseInt(r.minutes_played || 0, 10) || 0
+            });
+        });
+        function lineupKeyToGameStr(rawKey) {
+            const v = (rawKey || '').trim();
+            if (!v) return null;
+            const firstSpace = v.indexOf(' ');
+            if (firstSpace === -1) return null;
+            return v.slice(firstSpace + 1);
+        }
+        matchesMap.forEach((match, k) => {
+            const anyRaw = Array.from(lineups)
+                .find(it => {
+                    const parsed = parseLineupMatchKey(it.match_key || '');
+                    const gk = parsed && parsed.lookupKey ? parsed.lookupKey : it.match_key || '';
+                    return gk && gk === k;
+                });
+            const gameStr = anyRaw ? lineupKeyToGameStr(anyRaw.match_key || '') : null;
+            const minutesPlayers = gameStr && minutesMap[gameStr] ? minutesMap[gameStr] : [];
+            const existingNames = new Set(match.players.map(p => p.name));
+            minutesPlayers.forEach(mp => {
+                if (!existingNames.has(mp.name)) {
+                    match.players.push(mp);
+                    existingNames.add(mp.name);
+                } else {
+                    const idx = match.players.findIndex(p => p.name === mp.name);
+                    if (idx !== -1) {
+                        if ((!match.players[idx].pos || match.players[idx].pos === '-') && mp.pos) {
+                            match.players[idx].pos = mp.pos;
+                        }
+                        if ((match.players[idx].minutes || 0) === 0 && mp.minutes > 0) {
+                            match.players[idx].minutes = mp.minutes;
+                        }
+                    }
+                }
+            });
+        });
+        const matches = Array.from(matchesMap.values()).sort((a, b) => {
+            if (a.date && b.date) {
+                return a.date.localeCompare(b.date);
+            }
+            return (a.label || '').localeCompare(b.label || '');
+        });
+        if (matches.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="error">Aucune donnée de composition disponible</td></tr>';
+            return;
+        }
+        matches.forEach(match => {
             const row = document.createElement('tr');
             row.style.cursor = 'pointer';
-            const matchKey = lineup.match_key || '';
-            const matchDisplay = matchKey.split('_').slice(-2).join(' ') || matchKey;
-            
+            let scoreText = '';
+            const realScore = (match.gf !== null && match.ga !== null) ? `${Math.round(match.gf)} - ${Math.round(match.ga)}` : '';
+            if (match.points !== null && match.points !== undefined) {
+                scoreText = `${match.points} pts`;
+            }
+            if (match.scoreFinal !== null && match.scoreFinal !== undefined) {
+                const ratingText = `note ${match.scoreFinal.toFixed(1)}`;
+                scoreText = scoreText ? `${scoreText} • ${ratingText}` : ratingText;
+            }
+            if (realScore) {
+                scoreText = scoreText ? `${realScore} • ${scoreText}` : realScore;
+            }
+            if (!scoreText) {
+                scoreText = '-';
+            }
+            const playedCount = match.players.filter(p => (p.minutes || 0) > 0).length;
+            const countBadge = playedCount > 0 ? `(${Math.min(playedCount, 11)}/11)` : '';
+            const incomplete = playedCount < 11;
             row.innerHTML = `
-                <td>${matchDisplay}</td>
-                <td>${lineup.player || ''}</td>
-                <td>${lineup.pos || ''}</td>
-                <td>${parseInt(lineup.minutes_played || 0)}</td>
+                <td>${match.label}</td>
+                <td>${match.opponent || ''}</td>
+                <td>${scoreText}</td>
+                <td><button class="btn btn-secondary btn-sm" data-match-key="${match.key}">Voir ${countBadge}</button></td>
             `;
-            
-            row.addEventListener('click', () => {
-                const content = `
-                    <div class="lineup-details">
-                        <h3>Détails de la Composition</h3>
-                        <p><strong>Match:</strong> ${matchDisplay}</p>
-                        <p><strong>Joueur:</strong> ${lineup.player || ''}</p>
-                        <p><strong>Position:</strong> ${lineup.pos || ''}</p>
-                        <p><strong>Minutes Jouées:</strong> ${parseInt(lineup.minutes_played || 0)}</p>
-                    </div>
-                `;
-                createModal(`Composition: ${matchDisplay}`, content);
-            });
-            
+            const button = row.querySelector('button');
+            if (button) {
+                button.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const pitchHtml = buildLineupPitchWithFormation(match.players, match.formation || '');
+                    const playersSorted = match.players.slice().sort((a, b) => b.minutes - a.minutes);
+                    let listHtml = '<ul class="lineup-list">';
+                    playersSorted.forEach(p => {
+                        listHtml += `<li><strong>${p.name}</strong> (${translatePositionFr(p.pos || '-')}) — ${p.minutes} min</li>`;
+                    });
+                    listHtml += '</ul>';
+                    const venueLabel = match.venue === 'Home' ? 'Domicile' : match.venue === 'Away' ? 'Extérieur' : '';
+                    const headerHtml = `
+                        <div class="lineup-header">
+                            <p><strong>Date:</strong> ${match.date ? formatDate(match.date) : '-'}</p>
+                            <p><strong>Adversaire:</strong> ${match.opponent || '-'}</p>
+                            <p><strong>Lieu:</strong> ${venueLabel || '-'}</p>
+                            <p><strong>Score:</strong> ${realScore || '-'}</p>
+                            <p><strong>Score modèle:</strong> ${scoreText}</p>
+                            <p><strong>Formation:</strong> ${match.formation || '-'}</p>
+                            ${incomplete ? '<p style="color:#f87171"><strong>Attention:</strong> composition incomplète détectée</p>' : ''}
+                        </div>
+                    `;
+                    const content = `
+                        <div class="lineup-modal">
+                            ${headerHtml}
+                            ${pitchHtml}
+                            <h3>Composition détaillée</h3>
+                            ${listHtml}
+                        </div>
+                    `;
+                    createModal(`Composition: ${match.label}`, content);
+                });
+            }
             tbody.appendChild(row);
         });
     } catch (error) {
@@ -1043,6 +1478,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initStandingsTabs();
     initMatchAnalysis();
     loadTeamStyles();
+    loadHomeStats();
+    loadPreviewMatches();
 });
 
 // --- Match Analysis Logic ---
@@ -1357,4 +1794,74 @@ function loadTeamStyles() {
         renderList(highEl, high.slice(0, 10));
         renderList(spacesEl, spaces.slice(0, 10));
     }
+}
+
+function loadHomeStats() {
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    fetch(cacheBust('data/processed/league1_standings_home_away.csv'))
+        .then(r => r.text())
+        .then(t => {
+            const rows = parseCSV(t);
+            if (!rows || rows.length === 0) return;
+            const leader = rows.reduce((acc, cur) => {
+                const rk = parseInt(cur.rank);
+                if (!acc || rk < parseInt(acc.rank)) return cur;
+                return acc;
+            }, null);
+            const ol = rows.find(r => /Lyon|Olympique Lyonnais/i.test(r.team));
+            if (leader) {
+                setText('hero-rank-value', `${leader.team} ${parseInt(leader.rank)}${parseInt(leader.rank)===1?'er':'ème'}`);
+                setText('hero-rank-label', 'Classement Ligue 1 (leader)');
+            }
+            if (ol) {
+                setText('hero-rating-value', `${parseInt(ol.points)} pts`);
+                setText('hero-ol-rank-value', `${parseInt(ol.rank)}${parseInt(ol.rank)===1?'er':'ème'}`);
+            }
+        })
+        .catch(() => {});
+    Promise.all([
+        fetch(cacheBust('data/processed/ol_match_score_final.csv'))
+            .then(r => r.text())
+            .then(t => {
+                const rows = parseCSV(t) || [];
+                setText('hero-matches-value', `${rows.length}`);
+            })
+            .catch(() => {}),
+        fetch(cacheBust('data/processed/ol_best_combos_2_players.csv'))
+            .then(r => r.text())
+            .then(t => {
+                const rows = parseCSV(t) || [];
+                setText('hero-combos-value', `${rows.length}`);
+            })
+            .catch(() => {})
+    ]);
+}
+
+function loadPreviewMatches() {
+    const tbody = document.getElementById('preview-matches-tbody');
+    if (!tbody) return;
+    fetch(cacheBust('data/processed/ol_match_score_final.csv'))
+        .then(r => r.text())
+        .then(t => {
+            const rows = parseCSV(t) || [];
+            rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const latest = rows.slice(0, 3);
+            tbody.innerHTML = latest.map(m => {
+                const badge = m.result === 'W' ? 'badge badge-win' : m.result === 'D' ? 'badge badge-draw' : 'badge badge-loss';
+                const label = m.result === 'W' ? 'Victoire' : m.result === 'D' ? 'Nul' : 'Défaite';
+                const rating = parseFloat(m.match_rating || 0).toFixed(1);
+                return `<tr>
+                    <td>${formatDate(m.date)}</td>
+                    <td>${m.opponent || ''}</td>
+                    <td><span class="${badge}">${label}</span></td>
+                    <td>${rating}</td>
+                </tr>`;
+            }).join('');
+        })
+        .catch(() => {
+            tbody.innerHTML = '<tr><td colspan="4" class="error">Erreur lors du chargement des données</td></tr>';
+        });
 }
