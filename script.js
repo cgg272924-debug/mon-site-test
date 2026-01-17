@@ -582,6 +582,9 @@ function translatePositionFr(pos) {
         CB: 'DC',
         RWB: 'DD',
         LWB: 'DG',
+        WB: 'MG',
+        RM: 'MD',
+        LM: 'MG',
         DM: 'MDC',
         CDM: 'MDC',
         CM: 'MC',
@@ -689,8 +692,12 @@ function buildLineupPitch(players) {
 }
 
 function buildLineupPitchWithFormation(players, formationStr) {
+    const sorted = players
+        .slice()
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
+        .slice(0, Math.min(players.length, 11));
     const toPrimary = x => (x || '').toUpperCase().split(',')[0].trim();
-    const data = players.map(p => ({
+    const data = sorted.map(p => ({
         name: p.name || '',
         pos: p.pos || '',
         primary: toPrimary(p.pos || ''),
@@ -701,21 +708,26 @@ function buildLineupPitchWithFormation(players, formationStr) {
     const attCount = nums.length > 0 ? nums[nums.length - 1] : null;
     const midCounts = nums.length > 2 ? nums.slice(1, nums.length - 1) : (nums.length === 2 ? [nums[1]] : []);
     const isThreeBack = defCount === 3;
-    const gk = data.filter(d => d.primary === 'GK');
-    const defenders = data.filter(d => d.primary === 'CB')
-        .concat((defCount && defCount === 4) ? data.filter(d => ['RB', 'LB'].includes(d.primary)) : []);
-    let wingbacks = [];
-    if (isThreeBack) {
-        wingbacks = data.filter(d => ['LWB', 'RWB'].includes(d.primary));
-    }
-    const midsDeep = data.filter(d => ['DM', 'CDM'].includes(d.primary))
-        .concat(isThreeBack ? wingbacks : []);
-    const midsCentral = data.filter(d => ['CM'].includes(d.primary));
-    const midsAdvanced = data.filter(d => ['AM', 'CAM'].includes(d.primary));
-    const attackers = data.filter(d => ['RW', 'LW', 'FW', 'ST'].includes(d.primary));
+    const gk = data.filter(d => d.primary === 'GK').sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+    const defenders = data
+        .filter(d => ['RB', 'LB', 'CB', 'RWB', 'LWB'].includes(d.primary))
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+    const midsDeep = data
+        .filter(d => ['DM', 'CDM'].includes(d.primary))
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+    const midsCentral = data
+        .filter(d => ['CM', 'LM', 'RM'].includes(d.primary))
+        .concat(isThreeBack ? data.filter(d => ['LWB', 'RWB', 'WB'].includes(d.primary)) : [])
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+    const midsAdvanced = data
+        .filter(d => ['AM', 'CAM'].includes(d.primary))
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+    const attackers = data
+        .filter(d => ['RW', 'LW', 'FW', 'ST'].includes(d.primary))
+        .sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
     function orderDef(defs) {
-        const lefts = data.filter(d => ['LB'].includes(d.primary));
-        const rights = data.filter(d => ['RB'].includes(d.primary));
+        const lefts = defs.filter(d => ['LB', 'LWB'].includes(d.primary));
+        const rights = defs.filter(d => ['RB', 'RWB'].includes(d.primary));
         const centers = defs.filter(d => d.primary === 'CB');
         return defCount === 4 ? [...lefts, ...centers, ...rights] : centers;
     }
@@ -730,10 +742,30 @@ function buildLineupPitchWithFormation(players, formationStr) {
     const midDeepOrdered = midsDeep;
     const midCentralOrdered = midsCentral;
     const midAdvOrdered = midsAdvanced;
+    const wantMidMain = midCounts.length >= 1 ? midCounts[0] : (midCounts.length === 0 ? (midsDeep.length + midsCentral.length) : 0);
+    const wantMidAdv = midCounts.length >= 2 ? midCounts[1] : 0;
+    const selected = [];
+    if (gk.length > 0) selected.push(gk[0]);
+    defOrdered.slice(0, defCount || 4).forEach(p => selected.push(p));
+    const takeDeep = Math.min(wantMidMain, midDeepOrdered.length);
+    midDeepOrdered.slice(0, takeDeep).forEach(p => selected.push(p));
+    const remainingMain = Math.max((wantMidMain || 0) - takeDeep, 0);
+    midCentralOrdered.slice(0, remainingMain).forEach(p => selected.push(p));
+    const takeAdv = Math.min(wantMidAdv, midAdvOrdered.length);
+    midAdvOrdered.slice(0, takeAdv).forEach(p => selected.push(p));
+    const fillAdvRemain = Math.max((wantMidAdv || 0) - takeAdv, 0);
+    if (fillAdvRemain > 0) {
+        midCentralOrdered.slice(remainingMain, remainingMain + fillAdvRemain).forEach(p => selected.push(p));
+    }
+    attOrdered.slice(0, attCount || 2).forEach(p => selected.push(p));
+    if (selected.length < 11) {
+        const pool = data.filter(d => !selected.some(s => s.name === d.name));
+        pool.slice(0, 11 - selected.length).forEach(p => selected.push(p));
+    }
     const formation = `${defOrdered.length}-${midDeepOrdered.length + midCentralOrdered.length + midAdvOrdered.length}-${attOrdered.length}`;
     const yAttack = 16;
-    const yMidAdv = midCounts.length >= 2 ? 32 : (midCounts.length === 1 ? 38 : 34);
-    const yMidCentral = midCounts.length >= 3 ? 44 : (midCounts.length >= 2 ? 44 : 44);
+    const yMidAdv = (wantMidAdv || 0) > 0 ? 32 : 36;
+    const yMidCentral = 44;
     const yMidDeep = 56;
     const yDefense = 74;
     const yGk = 90;
@@ -755,13 +787,20 @@ function buildLineupPitchWithFormation(players, formationStr) {
             posFr: p.posFr
         }));
     }
+    const selNames = new Set(selected.map(s => s.name));
+    const selGK = selected.filter(s => s.primary === 'GK');
+    const selDef = selected.filter(s => ['RB', 'LB', 'CB', 'RWB', 'LWB'].includes(s.primary));
+    const selMidDeep = selected.filter(s => ['DM', 'CDM'].includes(s.primary));
+    const selMidCentral = selected.filter(s => ['CM', 'LM', 'RM'].includes(s.primary));
+    const selMidAdv = selected.filter(s => ['AM', 'CAM'].includes(s.primary));
+    const selAtt = selected.filter(s => ['RW', 'LW', 'FW', 'ST'].includes(s.primary));
     const nodes = []
-        .concat(nodesFrom(attOrdered, yAttack))
-        .concat(nodesFrom(midAdvOrdered, yMidAdv))
-        .concat(nodesFrom(midCentralOrdered, yMidCentral, 2))
-        .concat(nodesFrom(midDeepOrdered, yMidDeep))
-        .concat(nodesFrom(defOrdered, yDefense))
-        .concat(nodesFrom(gk, yGk));
+        .concat(nodesFrom(selAtt, yAttack))
+        .concat(nodesFrom(selMidAdv, yMidAdv))
+        .concat(nodesFrom(selMidCentral, yMidCentral, 2))
+        .concat(nodesFrom(selMidDeep, yMidDeep))
+        .concat(nodesFrom(selDef, yDefense))
+        .concat(nodesFrom(selGK, yGk));
     let html = `
         <div class="pitch">
             <div class="pitch-markings">
@@ -789,20 +828,23 @@ function buildLineupPitchWithFormation(players, formationStr) {
 }
 async function loadLineups() {
     try {
-        const [lineupsResponse, lookupResponse, cleanResponse, minutesResponse] = await Promise.all([
+        const [lineupsResponse, lookupResponse, cleanResponse, minutesResponse, aggResponse] = await Promise.all([
             fetch(cacheBust('data/processed/ol_lineups_by_match.csv')),
             fetch(cacheBust('data/processed/match_lookup.csv')),
             fetch(cacheBust('data/processed/ol_matches_clean.csv')),
-            fetch(cacheBust('data/processed/ol_player_minutes.csv'))
+            fetch(cacheBust('data/processed/ol_player_minutes.csv')),
+            fetch(cacheBust('data/processed/ol_match_lineups.csv'))
         ]);
         const lineupsText = await lineupsResponse.text();
         const lookupText = await lookupResponse.text();
         const cleanText = await cleanResponse.text();
         const minutesText = await minutesResponse.text();
+        const aggText = await aggResponse.text();
         const lineups = parseCSV(lineupsText);
         const lookupRows = parseCSV(lookupText);
         const cleanRows = parseCSV(cleanText);
         const minutesRows = parseCSV(minutesText);
+        const aggRows = parseCSV(aggText);
         const tbody = document.getElementById('lineups-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -881,12 +923,40 @@ async function loadLineups() {
                 minutes: parseInt(r.minutes_played || 0, 10) || 0
             });
         });
+        function parsePlayersList(str) {
+            const s = (str || '').trim();
+            if (!s.startsWith('[') || !s.endsWith(']')) return [];
+            const inner = s.slice(1, -1);
+            const parts = inner.split(',').map(x => x.trim()).filter(x => x.length > 0);
+            return parts.map(p => {
+                if (p.startsWith("'") && p.endsWith("'")) return p.slice(1, -1);
+                if (p.startsWith('"') && p.endsWith('"')) return p.slice(1, -1);
+                return p;
+            });
+        }
+        const aggByDate = {};
+        aggRows.forEach(r => {
+            const mk = r.match_key || '';
+            const idx = mk.indexOf('_');
+            if (idx === -1) return;
+            const date = mk.slice(0, idx);
+            const players = parsePlayersList(r.players || '');
+            if (date && players.length > 0) {
+                aggByDate[date] = players;
+            }
+        });
         function lineupKeyToGameStr(rawKey) {
             const v = (rawKey || '').trim();
             if (!v) return null;
             const firstSpace = v.indexOf(' ');
             if (firstSpace === -1) return null;
-            return v.slice(firstSpace + 1);
+            const prefix = v.slice(0, firstSpace);
+            const rest = v.slice(firstSpace + 1);
+            const parts = prefix.split('_');
+            if (parts.length < 2) return null;
+            const date = parts[1];
+            if (!date || !rest) return null;
+            return `${date} ${rest}`;
         }
         matchesMap.forEach((match, k) => {
             const anyRaw = Array.from(lineups)
@@ -912,6 +982,18 @@ async function loadLineups() {
                             match.players[idx].minutes = mp.minutes;
                         }
                     }
+                }
+            });
+            const dateKey = match.date || '';
+            const aggPlayers = aggByDate[dateKey] || [];
+            aggPlayers.forEach(name => {
+                if (!existingNames.has(name)) {
+                    match.players.push({
+                        name,
+                        pos: '-',
+                        minutes: 0
+                    });
+                    existingNames.add(name);
                 }
             });
         });

@@ -1135,6 +1135,296 @@
             );
         }
 
+        function MatchesReactTableByRound() {
+            const a = useCsvData('data/processed/ol_match_score_final.csv');
+            const b = useCsvData('data/raw/ligue1_matches_raw.csv');
+            const [venueFilter, setVenueFilter] = useState('all');
+            const [resultFilter, setResultFilter] = useState('all');
+            const [sortBy, setSortBy] = useState('round_asc');
+            const [roundFilter, setRoundFilter] = useState('all');
+            const loading = a.loading || b.loading;
+            const error = a.error || b.error;
+            const rows = a.rows || [];
+            const rawRows = b.rows || [];
+            if (loading) {
+                return (
+                    <div className="table-container">
+                        <div className="loading">Chargement des matchs...</div>
+                    </div>
+                );
+            }
+            if (error) {
+                return (
+                    <div className="table-container">
+                        <div className="error">Erreur lors du chargement des matchs: {error}</div>
+                    </div>
+                );
+            }
+            const lyonRaw = (rawRows || [])
+                .filter(r => {
+                    const mr = r.match_report || '';
+                    return mr && (mr.toLowerCase().includes('lyon-') || mr.toLowerCase().includes('-lyon-'));
+                })
+                .filter(r => (r.opponent || '').toLowerCase() !== 'lyon');
+            const roundMap = {};
+            lyonRaw.forEach(r => {
+                const d = r.date || '';
+                const opp = r.opponent || '';
+                const roundStr = r.round || '';
+                const num = parseInt(String(roundStr).replace(/[^0-9]/g, ''), 10);
+                if (d && opp && Number.isFinite(num)) {
+                    roundMap[`${d}_${opp}`] = num;
+                }
+            });
+            let olMatches = (rows || []).filter(m => (m.opponent || '').toLowerCase() !== 'lyon');
+            olMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const derivedRounds = {};
+            olMatches.forEach((m, i) => {
+                const key = `${m.date}_${m.opponent}`;
+                if (!roundMap[key]) {
+                    derivedRounds[key] = i + 1;
+                }
+            });
+            const withRounds = olMatches.map(m => {
+                const key = `${m.date}_${m.opponent}`;
+                const r = roundMap[key] || derivedRounds[key] || null;
+                return { ...m, round: r };
+            });
+            let matches = withRounds.slice();
+            matches = matches.filter(m => {
+                if (venueFilter === 'home' && m.venue !== 'Home') return false;
+                if (venueFilter === 'away' && m.venue !== 'Away') return false;
+                if (resultFilter === 'W' && m.result !== 'W') return false;
+                if (resultFilter === 'D' && m.result !== 'D') return false;
+                if (resultFilter === 'L' && m.result !== 'L') return false;
+                if (roundFilter !== 'all' && Number.isFinite(m.round)) {
+                    return m.round === parseInt(roundFilter, 10);
+                }
+                if (roundFilter !== 'all' && !Number.isFinite(m.round)) {
+                    return false;
+                }
+                return true;
+            });
+            matches.sort((a, b) => {
+                if (sortBy === 'date_asc') return new Date(a.date) - new Date(b.date);
+                if (sortBy === 'date_desc') return new Date(b.date) - new Date(a.date);
+                if (sortBy === 'points_desc') {
+                    return (parseInt(b.points || '0', 10) || 0) - (parseInt(a.points || '0', 10) || 0);
+                }
+                if (sortBy === 'rating_desc') {
+                    return (parseFloat(b.match_rating || '0') || 0) - (parseFloat(a.match_rating || '0') || 0);
+                }
+                if (sortBy === 'round_desc') {
+                    return (parseInt(b.round || '0', 10) || 0) - (parseInt(a.round || '0', 10) || 0);
+                }
+                return (parseInt(a.round || '0', 10) || 0) - (parseInt(b.round || '0', 10) || 0);
+            });
+            const calendar = withRounds
+                .slice()
+                .sort((a, b) => {
+                    const ra = parseInt(a.round || '0', 10) || 0;
+                    const rb = parseInt(b.round || '0', 10) || 0;
+                    if (ra !== rb) return ra - rb;
+                    return new Date(a.date) - new Date(b.date);
+                });
+            const distinctRounds = Array.from(
+                new Set(withRounds.map(m => m.round).filter(r => Number.isFinite(r)))
+            ).sort((x, y) => x - y);
+            const handleRowClick = match => {
+                const content = `
+                    <div class="match-details">
+                        <h3>Détails du Match</h3>
+                        <p><strong>Journée:</strong> ${Number.isFinite(match.round) ? match.round : '-'}</p>
+                        <p><strong>Date:</strong> ${formatDate(match.date)}</p>
+                        <p><strong>Adversaire:</strong> ${match.opponent || ''}</p>
+                        <p><strong>Lieu:</strong> ${match.venue === 'Home' ? 'Domicile' : 'Extérieur'}</p>
+                        <p><strong>Résultat:</strong> ${match.result === 'W' ? 'Victoire' : match.result === 'D' ? 'Nul' : 'Défaite'}</p>
+                        <p><strong>Points:</strong> ${match.points || 0}</p>
+                        <p><strong>Note:</strong> ${(parseFloat(match.match_rating || 0) || 0).toFixed(1)}</p>
+                        <p><strong>Score:</strong> ${match.score_final || ''}</p>
+                    </div>
+                `;
+                createModal(`Match: OL vs ${match.opponent || ''}`, content);
+            };
+            return (
+                <div className="space-y-4">
+                    <div className="rounded-xl bg-slate-900/70 p-4">
+                        <h3 className="text-sm font-semibold text-slate-100">
+                            Calendrier des matchs OL par journée (Aller / Retour)
+                        </h3>
+                        <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+                            {calendar.map(match => {
+                                const labelRound = Number.isFinite(match.round) ? `J ${match.round}` : 'J ?';
+                                const vsLabel =
+                                    match.venue === 'Home'
+                                        ? `OL vs ${match.opponent || ''}`
+                                        : `${match.opponent || ''} vs OL`;
+                                const badgeClass =
+                                    match.result === 'W'
+                                        ? 'badge badge-win'
+                                        : match.result === 'D'
+                                        ? 'badge badge-draw'
+                                        : match.result === 'L'
+                                        ? 'badge badge-loss'
+                                        : 'badge';
+                                const ratingValue =
+                                    (parseFloat(match.match_rating || 0) || 0).toFixed(1);
+                                const roundNumber = Number.isFinite(match.round) ? match.round : null;
+                                const legLabel =
+                                    roundNumber && roundNumber <= 17 ? 'Aller' : roundNumber ? 'Retour' : '';
+                                const cardStatusClass =
+                                    match.result === 'W'
+                                        ? 'border-emerald-500/60 bg-emerald-900/40'
+                                        : match.result === 'D'
+                                        ? 'border-slate-600 bg-slate-900/80'
+                                        : match.result === 'L'
+                                        ? 'border-rose-500/60 bg-rose-900/40'
+                                        : 'border-slate-700 bg-slate-900/80';
+                                return (
+                                    <div
+                                        key={(match.match_key || match.date + match.opponent) + '-card'}
+                                        className={`min-w-[180px] cursor-pointer rounded-lg px-3 py-2 text-xs ${cardStatusClass}`}
+                                        onClick={() => handleRowClick(match)}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-100">
+                                                    {labelRound}
+                                                </span>
+                                                {legLabel && (
+                                                    <span className="text-[10px] text-slate-300">
+                                                        {legLabel}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-[10px] text-slate-200">
+                                                {formatDate(match.date)}
+                                            </span>
+                                        </div>
+                                        <div className="mt-1 text-[11px] text-slate-100">
+                                            {vsLabel}
+                                        </div>
+                                        <div className="mt-1 flex items-center justify-between">
+                                            <span className={badgeClass}>
+                                                {match.result === 'W'
+                                                    ? 'V'
+                                                    : match.result === 'D'
+                                                    ? 'N'
+                                                    : match.result === 'L'
+                                                    ? 'D'
+                                                    : '-'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-100">
+                                                {(match.points || 0) + ' pts · ' + ratingValue}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3 rounded-xl bg-slate-900/60 p-4">
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Journée</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={roundFilter}
+                                onChange={e => setRoundFilter(e.target.value)}
+                            >
+                                <option value="all">Toutes</option>
+                                {distinctRounds.map(r => (
+                                    <option key={`r-${r}`} value={String(r)}>J {r}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Lieu</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={venueFilter}
+                                onChange={e => setVenueFilter(e.target.value)}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="home">Domicile</option>
+                                <option value="away">Extérieur</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Résultat</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={resultFilter}
+                                onChange={e => setResultFilter(e.target.value)}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="W">Victoire</option>
+                                <option value="D">Nul</option>
+                                <option value="L">Défaite</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Tri</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={sortBy}
+                                onChange={e => setSortBy(e.target.value)}
+                            >
+                                <option value="round_asc">Journée croissante</option>
+                                <option value="round_desc">Journée décroissante</option>
+                                <option value="date_asc">Date croissante</option>
+                                <option value="date_desc">Date décroissante</option>
+                                <option value="points_desc">Points décroissants</option>
+                                <option value="rating_desc">Note de match décroissante</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="table-container">
+                        <table id="matches-table">
+                            <thead>
+                                <tr>
+                                    <th>Journée</th>
+                                    <th>Date</th>
+                                    <th>Adversaire</th>
+                                    <th>Lieu</th>
+                                    <th>Résultat</th>
+                                    <th>Points</th>
+                                    <th>Note</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {matches.map(match => (
+                                    <tr
+                                        key={(match.match_key || match.date + match.opponent) + String(match.round || '')}
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => handleRowClick(match)}
+                                    >
+                                        <td>{Number.isFinite(match.round) ? `J ${match.round}` : '-'}</td>
+                                        <td>{formatDate(match.date)}</td>
+                                        <td>{match.opponent || ''}</td>
+                                        <td>{match.venue === 'Home' ? 'Domicile' : 'Extérieur'}</td>
+                                        <td>
+                                            <span className={getResultBadge(match.result)}>
+                                                {match.result === 'W' ? 'Victoire' : match.result === 'D' ? 'Nul' : 'Défaite'}
+                                            </span>
+                                        </td>
+                                        <td>{match.points || 0}</td>
+                                        <td>{(parseFloat(match.match_rating || 0) || 0).toFixed(1)}</td>
+                                        <td>{match.score_final || ''}</td>
+                                    </tr>
+                                ))}
+                                {matches.length === 0 && (
+                                    <tr>
+                                        <td colSpan="8" className="loading">Aucun match ne correspond aux filtres</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
         function PlayersReactTable() {
             const { loading, error, rows } = useCsvData(
                 'data/processed/ol_key_players.csv'
@@ -1949,7 +2239,7 @@
 
         const matchesRoot = document.getElementById('matches-react-root');
         if (matchesRoot && window.ReactDOM && ReactDOM.createRoot) {
-            ReactDOM.createRoot(matchesRoot).render(<MatchesReactTable />);
+            ReactDOM.createRoot(matchesRoot).render(<MatchesReactTableByRound />);
         }
 
         const playersRoot = document.getElementById('players-react-root');
