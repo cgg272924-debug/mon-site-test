@@ -43,7 +43,7 @@ for match_date, group in players.groupby("match_date"):
     if len(joueurs) < 2:
         continue
 
-    for r in range(2, min(6, len(joueurs) + 1)):
+    for r in range(2, min(12, len(joueurs) + 1)):
         for combo in itertools.combinations(joueurs, r):
             rows.append({
                 "match_date": match_date,

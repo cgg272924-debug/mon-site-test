@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-print("=== ANALYSE — COMBINAISONS OL (3 À 11 JOUEURS) ===")
+print("=== ANALYSE — COMBINAISONS OL (2 À 11 JOUEURS) ===")
 
 # =========================
 # 1. Chargement
@@ -29,9 +29,9 @@ output_dir.mkdir(parents=True, exist_ok=True)
 all_results = []
 
 # =========================
-# 4. Boucle tailles 3 → 11
+# 4. Boucle tailles 2 → 11
 # =========================
-for size in range(3, 12):
+for size in range(2, 12):
     subset = df[
         (df["size"] == size) &
         (df["matches"] >= 3)

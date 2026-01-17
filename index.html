@@ -1147,6 +1147,7 @@
             );
             const [minMatches, setMinMatches] = useState(3);
             const [playerFilter, setPlayerFilter] = useState('');
+            const [sizeFilter, setSizeFilter] = useState('all');
             const [sortBy, setSortBy] = useState('points_desc');
 
             if (loading) {
@@ -1178,6 +1179,14 @@
                 }))
                 .filter(c => c.name);
 
+            const availableSizes = Array.from(
+                new Set(
+                    combos
+                        .map(c => c.size)
+                        .filter(size => Number.isFinite(size) && size > 0)
+                )
+            ).sort((a, b) => a - b);
+
             const normalizedFilter = playerFilter
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
@@ -1193,6 +1202,13 @@
                         .toLowerCase()
                         .includes(normalizedFilter)
                 );
+            }
+
+            if (sizeFilter !== 'all') {
+                const sizeNumber = parseInt(sizeFilter, 10) || 0;
+                if (sizeNumber > 0) {
+                    filtered = filtered.filter(c => c.size === sizeNumber);
+                }
             }
 
             filtered.sort((a, b) => {
@@ -1227,7 +1243,7 @@
                     <div className="flex flex-col gap-4 md:flex-row md:items-baseline md:justify-between">
                         <div>
                             <p className="text-xs uppercase tracking-wide text-slate-400">
-                                Combinaisons de 3 à 11 joueurs
+                                Combinaisons de 2 à 11 joueurs
                             </p>
                             <h3 className="text-lg font-semibold">
                                 Vue avancée des combinaisons OL
@@ -1311,6 +1327,23 @@
                                     setPlayerFilter(e.target.value)
                                 }
                             />
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">
+                                Taille de combinaison
+                            </label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={sizeFilter}
+                                onChange={e => setSizeFilter(e.target.value)}
+                            >
+                                <option value="all">Toutes</option>
+                                {availableSizes.map(size => (
+                                    <option key={size} value={String(size)}>
+                                        {size} joueurs
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="flex flex-col text-sm text-slate-200">
                             <label className="mb-1 text-xs text-slate-400">
