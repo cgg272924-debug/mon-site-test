@@ -190,7 +190,7 @@ def main() -> None:
             iso = _fetch_transfer_date(session, fee_url)
             if not iso and r.get("fee") and "/" in r["fee"]:
                 iso = _to_iso(r["fee"].split()[-1])
-            r["date"] = iso or datetime.now().date().isoformat()
+            r["date"] = iso
     if not rows:
         print("[transfermarkt] Aucun transfert parsé", file=sys.stderr)
     df = pd.DataFrame(list(unique.values()) or rows)

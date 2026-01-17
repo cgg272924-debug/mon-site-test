@@ -172,7 +172,6 @@ def parse_article(session: requests.Session, url: str) -> Dict[str, str]:
         "direction": cls["direction"],
         "url": url,
         "source": "L'Equipe",
-    }
 
 
 def main() -> None:

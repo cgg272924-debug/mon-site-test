@@ -1572,16 +1572,24 @@ async function initMatchAnalysis() {
 
     // Load data once
     let standingsData = [];
+    let simulationData = [];
     try {
-        const url = cacheBust('data/processed/league1_standings_home_away.csv');
-        const response = await fetch(url);
-        if (response.ok) {
-            const text = await response.text();
+        const [standingsResp, simResp] = await Promise.all([
+            fetch(cacheBust('data/processed/league1_standings_home_away.csv')),
+            fetch(cacheBust('data/processed/ol_next_match_simulation.csv'))
+        ]);
+
+        if (standingsResp.ok) {
+            const text = await standingsResp.text();
             standingsData = parseCSV(text);
             populateOpponentDropdown(standingsData);
         }
+        if (simResp.ok) {
+            const text = await simResp.text();
+            simulationData = parseCSV(text);
+        }
     } catch (e) {
-        console.error("Error loading standings for analysis:", e);
+        console.error("Error loading analysis data:", e);
     }
 
     btnAnalyze.addEventListener('click', () => {
@@ -1591,7 +1599,7 @@ async function initMatchAnalysis() {
         
         if (resultsContainer) {
             resultsContainer.classList.remove('hidden');
-            analyzeMatch(opponentName, location, standingsData);
+            analyzeMatch(opponentName, location, standingsData, simulationData);
             
             // Scroll to results
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1623,7 +1631,7 @@ function populateOpponentDropdown(data) {
     });
 }
 
-function analyzeMatch(opponentName, location, data) {
+function analyzeMatch(opponentName, location, data, simulationData) {
     // Find OL and Opponent rows
     const olRow = data.find(row => row.team.includes('Lyon') || row.team.includes('Olympique Lyonnais'));
     const oppRow = data.find(row => row.team === opponentName);
@@ -1679,21 +1687,53 @@ function analyzeMatch(opponentName, location, data) {
 
     // Prediction Logic
     let winProb = 50;
-    
-    // Rank impact (Lower rank is better)
-    // If OL is 5 and Opp is 10, diff is 5 (positive for OL)
-    const rankDiff = oppRank - olRank;
-    winProb += rankDiff * 2;
-    
-    // Location impact
-    winProb += isOlHome ? 10 : -10;
-    
-    // Form impact (PPM)
-    const ppmDiff = olPPM - oppPPM;
-    winProb += ppmDiff * 20; // 1 PPM diff = 20% swing
-    
-    // Clamp
-    winProb = Math.min(95, Math.max(5, Math.round(winProb)));
+    let olScore = 0;
+    let oppScore = 0;
+    let h2hBonus = 0;
+    let rivalryPenalty = 0;
+    let injuryPenalty = 0;
+    let hasSimulation = false;
+
+    // Check if we have simulation data
+    if (simulationData && simulationData.length > 0) {
+        const venueTitle = location.charAt(0).toUpperCase() + location.slice(1);
+        const simMatch = simulationData.find(m => m.opponent === opponentName && m.venue === venueTitle);
+        
+        if (simMatch) {
+            hasSimulation = true;
+            winProb = parseFloat(simMatch.proba_win);
+            h2hBonus = parseFloat(simMatch.h2h_bonus || 0);
+            rivalryPenalty = parseFloat(simMatch.rivalry_penalty || 0);
+            injuryPenalty = parseFloat(simMatch.injury_penalty || 0);
+            
+            const olGf = parseFloat(simMatch.ol_gf || 0);
+            const oppGf = parseFloat(simMatch.opp_gf || 0);
+            
+            olScore = Math.round(olGf);
+            oppScore = Math.round(oppGf);
+            
+            const xgEl = document.getElementById('pred-xg');
+            if (xgEl) xgEl.textContent = olGf.toFixed(2);
+        }
+    }
+
+    if (!hasSimulation) {
+        // Fallback to old logic
+        const rankDiff = oppRank - olRank;
+        winProb += rankDiff * 2;
+        winProb += isOlHome ? 10 : -10;
+        
+        const ppmDiff = olPPM - oppPPM;
+        winProb += ppmDiff * 20;
+        winProb = Math.min(95, Math.max(5, Math.round(winProb)));
+        
+        const olExpectedGoals = (olAttack + oppDefense) / 2;
+        const oppExpectedGoals = (oppAttack + olDefense) / 2;
+        olScore = Math.round(olExpectedGoals);
+        oppScore = Math.round(oppExpectedGoals);
+        
+        document.getElementById('pred-xg').textContent = olExpectedGoals.toFixed(2);
+    }
     
     // Update Win Prob UI
     document.getElementById('prob-win').textContent = `${winProb}%`;
@@ -1702,21 +1742,33 @@ function analyzeMatch(opponentName, location, data) {
     probBar.className = `h-2 rounded-full ${winProb >= 50 ? 'bg-blue-500' : 'bg-red-500'}`;
 
     // Score Prediction
-    // OL Score = (OL Attack + Opp Defense) / 2
-    // Opp Score = (Opp Attack + OL Defense) / 2
-    // Add randomness or slight adjustment
-    const olExpectedGoals = (olAttack + oppDefense) / 2;
-    const oppExpectedGoals = (oppAttack + olDefense) / 2;
-    
-    const olScore = Math.round(olExpectedGoals);
-    const oppScore = Math.round(oppExpectedGoals);
-    
     document.getElementById('pred-score').textContent = `${olScore} - ${oppScore}`;
-    document.getElementById('pred-xg').textContent = olExpectedGoals.toFixed(2);
     
     // Form Icons
     const formContainer = document.getElementById('form-icons');
     formContainer.innerHTML = generateFormIcons(olPPM);
+
+    // ADD H2H / Rivalry Info (Append)
+    if (hasSimulation && (h2hBonus !== 0 || rivalryPenalty !== 0 || injuryPenalty !== 0)) {
+        let contextHTML = '<div class="mt-2 pt-2 border-t border-gray-700 flex flex-col gap-1 text-center">';
+        
+        if (rivalryPenalty > 0) {
+            contextHTML += '<div class="text-red-400 font-bold text-xs uppercase tracking-wider">⚠️ Match de Rivalité</div>';
+        }
+        
+        if (h2hBonus > 0) {
+            contextHTML += `<div class="text-green-400 text-xs">Historique Favorable (+${h2hBonus.toFixed(1)})</div>`;
+        } else if (h2hBonus < 0) {
+            contextHTML += `<div class="text-red-400 text-xs">Historique Défavorable (${h2hBonus.toFixed(1)})</div>`;
+        }
+        
+        if (injuryPenalty > 0) {
+             contextHTML += `<div class="text-orange-400 text-xs">Impact Blessures (-${injuryPenalty.toFixed(1)})</div>`;
+        }
+        
+        contextHTML += '</div>';
+        formContainer.innerHTML += contextHTML;
+    }
 
     // Comparatives
     updateComparison('attack', olAttack, oppAttack);
