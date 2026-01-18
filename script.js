@@ -1573,6 +1573,9 @@ async function initMatchAnalysis() {
     // Load data once
     let standingsData = [];
     let simulationData = [];
+    let enginePredictions = [];
+
+    // Charger en priorité les données existantes (classement + ancienne simulation)
     try {
         const [standingsResp, simResp] = await Promise.all([
             fetch(cacheBust('data/processed/league1_standings_home_away.csv')),
@@ -1589,7 +1592,18 @@ async function initMatchAnalysis() {
             simulationData = parseCSV(text);
         }
     } catch (e) {
-        console.error("Error loading analysis data:", e);
+        console.error("Error loading core analysis data:", e);
+    }
+
+    // Charger ensuite les prédictions du nouveau moteur (optionnel, ne doit jamais casser le reste)
+    try {
+        const engineResp = await fetch(cacheBust('prediction_engine/data/match_predictions.csv'));
+        if (engineResp.ok) {
+            const text = await engineResp.text();
+            enginePredictions = parseCSV(text);
+        }
+    } catch (e) {
+        console.error("Error loading engine predictions:", e);
     }
 
     btnAnalyze.addEventListener('click', () => {
@@ -1599,7 +1613,7 @@ async function initMatchAnalysis() {
         
         if (resultsContainer) {
             resultsContainer.classList.remove('hidden');
-            analyzeMatch(opponentName, location, standingsData, simulationData);
+            analyzeMatch(opponentName, location, standingsData, simulationData, enginePredictions);
             
             // Scroll to results
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1631,7 +1645,7 @@ function populateOpponentDropdown(data) {
     });
 }
 
-function analyzeMatch(opponentName, location, data, simulationData) {
+function analyzeMatch(opponentName, location, data, simulationData, enginePredictions) {
     // Find OL and Opponent rows
     const olRow = data.find(row => row.team.includes('Lyon') || row.team.includes('Olympique Lyonnais'));
     const oppRow = data.find(row => row.team === opponentName);
@@ -1733,6 +1747,20 @@ function analyzeMatch(opponentName, location, data, simulationData) {
         oppScore = Math.round(oppExpectedGoals);
         
         document.getElementById('pred-xg').textContent = olExpectedGoals.toFixed(2);
+    }
+
+    if (enginePredictions && enginePredictions.length > 0 && isOlHome) {
+        const engineMatch = enginePredictions.find(m => {
+            const homeTeam = (m.home_team || m.home || '').toLowerCase();
+            const awayTeam = (m.away_team || m.away || '').toLowerCase();
+            return homeTeam.includes('lyon') && awayTeam === opponentName.toLowerCase();
+        });
+        if (engineMatch) {
+            const pHome = parseFloat(engineMatch.proba_home_win || engineMatch.home_win);
+            if (!isNaN(pHome) && pHome > 0 && pHome <= 1.000001) {
+                winProb = Math.round(pHome * 100);
+            }
+        }
     }
     
     // Update Win Prob UI
