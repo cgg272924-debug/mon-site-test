@@ -512,6 +512,10 @@ def main() -> None:
     is_ci = bool(os.environ.get("GITHUB_ACTIONS"))
     force_scrape = bool(os.environ.get("FORCE_SCRAPE"))
     do_scrape = not is_ci or force_scrape
+    season_label = ""
+    schedule_url: Optional[str] = None
+    standings_url: Optional[str] = None
+    team_stats_url: Optional[str] = None
     try:
         season_info = get_current_season_info(session)
         season_label = str(season_info["season_label"])
@@ -703,11 +707,16 @@ def main() -> None:
             "scraping/soccerdata_ligue1.py",
             "scraping/soccerdata_player_minutes_ol.py",
         ]
-        if do_scrape:
+        new_matches_for_soccerdata = False
+        if do_scrape and schedule_url:
             if detect_new_matches(session, schedule_url):
-                run_scripts(scripts_scraping_soccerdata)
+                new_matches_for_soccerdata = True
             else:
                 log("[INFO] Scraping soccerdata ignoré: aucun nouveau match détecté")
+        elif do_scrape and not schedule_url:
+            log("[INFO] Scraping soccerdata ignoré: URL calendrier indisponible")
+        if do_scrape and new_matches_for_soccerdata:
+            run_scripts(scripts_scraping_soccerdata)
         run_scripts(scripts_analysis)
     except Exception as exc:
         log(f"[AVERTISSEMENT] Etape analyse interrompue: {exc}")
