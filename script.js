@@ -1573,9 +1573,8 @@ async function initMatchAnalysis() {
     // Load data once
     let standingsData = [];
     let simulationData = [];
-    let enginePredictions = [];
 
-    // Charger en priorité les données existantes (classement + ancienne simulation)
+    // Charger les données de classement et la simulation du moteur central
     try {
         const [standingsResp, simResp] = await Promise.all([
             fetch(cacheBust('data/processed/league1_standings_home_away.csv')),
@@ -1595,17 +1594,6 @@ async function initMatchAnalysis() {
         console.error("Error loading core analysis data:", e);
     }
 
-    // Charger ensuite les prédictions du nouveau moteur (optionnel, ne doit jamais casser le reste)
-    try {
-        const engineResp = await fetch(cacheBust('prediction_engine/data/match_predictions.csv'));
-        if (engineResp.ok) {
-            const text = await engineResp.text();
-            enginePredictions = parseCSV(text);
-        }
-    } catch (e) {
-        console.error("Error loading engine predictions:", e);
-    }
-
     btnAnalyze.addEventListener('click', () => {
         const opponentName = document.getElementById('analysis-opponent').value;
         const location = document.getElementById('analysis-location').value;
@@ -1613,7 +1601,7 @@ async function initMatchAnalysis() {
         
         if (resultsContainer) {
             resultsContainer.classList.remove('hidden');
-            analyzeMatch(opponentName, location, standingsData, simulationData, enginePredictions);
+            analyzeMatch(opponentName, location, standingsData, simulationData);
             
             // Scroll to results
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1645,7 +1633,7 @@ function populateOpponentDropdown(data) {
     });
 }
 
-function analyzeMatch(opponentName, location, data, simulationData, enginePredictions) {
+function analyzeMatch(opponentName, location, data, simulationData) {
     // Find OL and Opponent rows
     const olRow = data.find(row => row.team.includes('Lyon') || row.team.includes('Olympique Lyonnais'));
     const oppRow = data.find(row => row.team === opponentName);
@@ -1699,104 +1687,126 @@ function analyzeMatch(opponentName, location, data, simulationData, enginePredic
     document.getElementById('opponent-name').textContent = opponentName;
     document.getElementById('opponent-rank').textContent = `${oppRank}${oppRank === 1 ? 'er' : 'ème'} (Ligue 1)`;
 
-    // Prediction Logic
-    let winProb = 50;
-    let olScore = 0;
-    let oppScore = 0;
-    let h2hBonus = 0;
-    let rivalryPenalty = 0;
-    let injuryPenalty = 0;
-    let hasSimulation = false;
-
-    // Check if we have simulation data
+    const venueTitle = location.charAt(0).toUpperCase() + location.slice(1);
+    let simMatch = null;
     if (simulationData && simulationData.length > 0) {
-        const venueTitle = location.charAt(0).toUpperCase() + location.slice(1);
-        const simMatch = simulationData.find(m => m.opponent === opponentName && m.venue === venueTitle);
-        
-        if (simMatch) {
-            hasSimulation = true;
-            winProb = parseFloat(simMatch.proba_win);
-            h2hBonus = parseFloat(simMatch.h2h_bonus || 0);
-            rivalryPenalty = parseFloat(simMatch.rivalry_penalty || 0);
-            injuryPenalty = parseFloat(simMatch.injury_penalty || 0);
-            
-            const olGf = parseFloat(simMatch.ol_gf || 0);
-            const oppGf = parseFloat(simMatch.opp_gf || 0);
-            
-            olScore = Math.round(olGf);
-            oppScore = Math.round(oppGf);
-            
-            const xgEl = document.getElementById('pred-xg');
-            if (xgEl) xgEl.textContent = olGf.toFixed(2);
-        }
-    }
-
-    if (!hasSimulation) {
-        // Fallback to old logic
-        const rankDiff = oppRank - olRank;
-        winProb += rankDiff * 2;
-        winProb += isOlHome ? 10 : -10;
-        
-        const ppmDiff = olPPM - oppPPM;
-        winProb += ppmDiff * 20;
-        winProb = Math.min(95, Math.max(5, Math.round(winProb)));
-        
-        const olExpectedGoals = (olAttack + oppDefense) / 2;
-        const oppExpectedGoals = (oppAttack + olDefense) / 2;
-        olScore = Math.round(olExpectedGoals);
-        oppScore = Math.round(oppExpectedGoals);
-        
-        document.getElementById('pred-xg').textContent = olExpectedGoals.toFixed(2);
-    }
-
-    if (enginePredictions && enginePredictions.length > 0 && isOlHome) {
-        const engineMatch = enginePredictions.find(m => {
-            const homeTeam = (m.home_team || m.home || '').toLowerCase();
-            const awayTeam = (m.away_team || m.away || '').toLowerCase();
-            return homeTeam.includes('lyon') && awayTeam === opponentName.toLowerCase();
+        simMatch = simulationData.find(m => {
+            const oppLabel = (m.opponent || '').toLowerCase();
+            const venueLabel = m.venue || '';
+            return oppLabel === opponentName.toLowerCase() && venueLabel === venueTitle;
         });
-        if (engineMatch) {
-            const pHome = parseFloat(engineMatch.proba_home_win || engineMatch.home_win);
-            if (!isNaN(pHome) && pHome > 0 && pHome <= 1.000001) {
-                winProb = Math.round(pHome * 100);
-            }
-        }
     }
-    
-    // Update Win Prob UI
-    document.getElementById('prob-win').textContent = `${winProb}%`;
+
+    if (!simMatch) {
+        const probWinEl = document.getElementById('prob-win');
+        const probDrawEl = document.getElementById('prob-draw');
+        const probLossEl = document.getElementById('prob-loss');
+        const probBar = document.getElementById('prob-bar');
+        const predScoreEl = document.getElementById('pred-score');
+        const xgEl = document.getElementById('pred-xg');
+        const explanationEl = document.getElementById('engine-explanation-text');
+        const factorsEl = document.getElementById('engine-key-factors');
+        const advancedEl = document.getElementById('engine-advanced-stats');
+
+        if (probWinEl) probWinEl.textContent = '--%';
+        if (probDrawEl) probDrawEl.textContent = '--%';
+        if (probLossEl) probLossEl.textContent = '--%';
+        if (probBar) {
+            probBar.style.width = '0%';
+            probBar.className = 'h-2 rounded-full bg-slate-700';
+        }
+        if (predScoreEl) predScoreEl.textContent = '-- - --';
+        if (xgEl) xgEl.textContent = '--';
+        if (explanationEl) explanationEl.textContent = "Aucune simulation disponible pour ce match.";
+        if (factorsEl) factorsEl.innerHTML = '';
+        if (advancedEl) advancedEl.innerHTML = '';
+        return;
+    }
+
+    const winProb = parseFloat(simMatch.proba_win || '0');
+    const drawProb = parseFloat(simMatch.proba_draw || '0');
+    const lossProb = parseFloat(simMatch.proba_loss || '0');
+    const scoreRaw = parseFloat(simMatch.score_raw || '0');
+    const injuryPenalty = parseFloat(simMatch.injury_penalty || '0');
+    const ppmDiff = parseFloat(simMatch.ppm_diff || '0');
+    const h2hBonus = parseFloat(simMatch.h2h_bonus || '0');
+    const rivalryPenalty = parseFloat(simMatch.rivalry_penalty || '0');
+    const olGf = parseFloat(simMatch.ol_gf || '0');
+    const oppGf = parseFloat(simMatch.opp_gf || '0');
+    const olPpmEngine = parseFloat(simMatch.ol_ppm || '0');
+    const oppPpmEngine = parseFloat(simMatch.opp_ppm || '0');
+    const explanation = simMatch.engine_explanation || '';
+
+    const olScore = Math.round(olGf);
+    const oppScore = Math.round(oppGf);
+
+    const probWinEl = document.getElementById('prob-win');
+    const probDrawEl = document.getElementById('prob-draw');
+    const probLossEl = document.getElementById('prob-loss');
     const probBar = document.getElementById('prob-bar');
-    probBar.style.width = `${winProb}%`;
-    probBar.className = `h-2 rounded-full ${winProb >= 50 ? 'bg-blue-500' : 'bg-red-500'}`;
+    const predScoreEl = document.getElementById('pred-score');
+    const xgEl = document.getElementById('pred-xg');
 
-    // Score Prediction
-    document.getElementById('pred-score').textContent = `${olScore} - ${oppScore}`;
-    
-    // Form Icons
-    const formContainer = document.getElementById('form-icons');
-    formContainer.innerHTML = generateFormIcons(olPPM);
-
-    // ADD H2H / Rivalry Info (Append)
-    if (hasSimulation && (h2hBonus !== 0 || rivalryPenalty !== 0 || injuryPenalty !== 0)) {
-        let contextHTML = '<div class="mt-2 pt-2 border-t border-gray-700 flex flex-col gap-1 text-center">';
-        
-        if (rivalryPenalty > 0) {
-            contextHTML += '<div class="text-red-400 font-bold text-xs uppercase tracking-wider">⚠️ Match de Rivalité</div>';
-        }
-        
-        if (h2hBonus > 0) {
-            contextHTML += `<div class="text-green-400 text-xs">Historique Favorable (+${h2hBonus.toFixed(1)})</div>`;
-        } else if (h2hBonus < 0) {
-            contextHTML += `<div class="text-red-400 text-xs">Historique Défavorable (${h2hBonus.toFixed(1)})</div>`;
-        }
-        
-        if (injuryPenalty > 0) {
-             contextHTML += `<div class="text-orange-400 text-xs">Impact Blessures (-${injuryPenalty.toFixed(1)})</div>`;
-        }
-        
-        contextHTML += '</div>';
-        formContainer.innerHTML += contextHTML;
+    if (probWinEl) probWinEl.textContent = `${winProb.toFixed(1)}%`;
+    if (probDrawEl) probDrawEl.textContent = `${drawProb.toFixed(1)}%`;
+    if (probLossEl) probLossEl.textContent = `${lossProb.toFixed(1)}%`;
+    if (probBar) {
+        probBar.style.width = `${winProb}%`;
+        probBar.className = `h-2 rounded-full ${winProb >= 50 ? 'bg-blue-500' : 'bg-red-500'}`;
     }
+    if (predScoreEl) predScoreEl.textContent = `${olScore} - ${oppScore}`;
+    if (xgEl) xgEl.textContent = olGf.toFixed(2);
+
+    const explanationEl = document.getElementById('engine-explanation-text');
+    if (explanationEl) {
+        explanationEl.textContent = explanation || "Le moteur n'a pas fourni d'explication détaillée.";
+    }
+
+    const factorsEl = document.getElementById('engine-key-factors');
+    if (factorsEl) {
+        const factors = [];
+        if (injuryPenalty > 0.1) {
+            factors.push(`Absences et composition : pénalité ${injuryPenalty.toFixed(2)} sur le score.`);
+        }
+        if (ppmDiff > 0.1) {
+            factors.push(`Forme récente à l'avantage de l'OL (+${ppmDiff.toFixed(2)} PPM).`);
+        } else if (ppmDiff < -0.1) {
+            factors.push(`Forme récente à l'avantage de l'adversaire (${ppmDiff.toFixed(2)} PPM).`);
+        }
+        if (isOlHome) {
+            factors.push("Avantage domicile au Groupama Stadium.");
+        } else {
+            factors.push("Match à l'extérieur pour l'OL.");
+        }
+        if (h2hBonus > 0.05) {
+            factors.push(`Historique favorable face à cet adversaire (+${h2hBonus.toFixed(2)}).`);
+        } else if (h2hBonus < -0.05) {
+            factors.push(`Historique défavorable face à cet adversaire (${h2hBonus.toFixed(2)}).`);
+        }
+        if (rivalryPenalty > 0.05) {
+            factors.push("Contexte de rivalité qui rehausse la difficulté du match.");
+        }
+
+        if (!factors.length) {
+            factors.push("Aucun facteur dominant unique, équilibre entre plusieurs signaux du moteur.");
+        }
+
+        factorsEl.innerHTML = factors.map(f => `<li>${f}</li>`).join('');
+    }
+
+    const advancedEl = document.getElementById('engine-advanced-stats');
+    if (advancedEl) {
+        const lines = [];
+        lines.push(`xG attendu OL : ${olGf.toFixed(2)} · xG adverse : ${oppGf.toFixed(2)}`);
+        lines.push(`Impact absences / composition : pénalité ${injuryPenalty.toFixed(2)}`);
+        lines.push(`Différence de forme (PPM OL - adversaire) : ${ppmDiff.toFixed(2)}`);
+        lines.push(`Rating global du moteur pour ce duel : ${scoreRaw.toFixed(2)}`);
+        lines.push(`PPM utilisés par le moteur · OL : ${olPpmEngine.toFixed(2)} · Adversaire : ${oppPpmEngine.toFixed(2)}`);
+        advancedEl.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+    }
+    
+    const formContainer = document.getElementById('form-icons');
+    formContainer.innerHTML = generateFormIcons(olPpmEngine);
 
     // Comparatives
     updateComparison('attack', olAttack, oppAttack);

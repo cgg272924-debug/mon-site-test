@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import ast
+from core_match_engine import MatchContext, compute_match_prediction
 
 # --- Configuration ---
 DATA_DIR = Path("data/processed")
@@ -23,6 +24,8 @@ WEIGHTS = {
     "injury_factor": 1.5,   # Multiplier for injury impact points
     "rivalry": 0.2          # Penalty for high rivalry (harder matches)
 }
+
+LEAGUE_TOP_PPM_THRESHOLD = 1.7
 
 def load_data():
     """Load all necessary CSV files."""
@@ -92,7 +95,7 @@ def calculate_player_impact(df_lineups, df_matches):
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-def calculate_win_probability(row, ol_stats, injury_impact_sum, proba_dataset, is_home=True):
+def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_count, proba_dataset, is_home=True):
     """
     Calculate win probability for OL against a specific opponent.
     row: Opponent stats row from standings
@@ -101,101 +104,116 @@ def calculate_win_probability(row, ol_stats, injury_impact_sum, proba_dataset, i
     
     # 1. Team Strength Difference (Points Per Match)
     if is_home:
-        ol_ppm = ol_stats['home_points_per_match']
-        opp_ppm = row['away_points_per_match']
+        ol_ppm = ol_stats["home_points_per_match"]
+        opp_ppm = row["away_points_per_match"]
         home_bonus = WEIGHTS["home_advantage"]
     else:
-        ol_ppm = ol_stats['away_points_per_match']
-        opp_ppm = row['home_points_per_match']
-        home_bonus = -WEIGHTS["home_advantage"] # Negative for away game
+        ol_ppm = ol_stats["away_points_per_match"]
+        opp_ppm = row["home_points_per_match"]
+        home_bonus = -WEIGHTS["home_advantage"]
 
     ppm_diff = ol_ppm - opp_ppm
     
     # 2. Rank Difference (Sign inverted: higher rank (smaller number) is better)
-    rank_diff = row['rank'] - ol_stats['rank'] # Positive if Opponent is lower ranked (e.g. Opp 18 - OL 5 = 13)
+    rank_diff = row["rank"] - ol_stats["rank"]
     
     # 3. Injury Penalty
-    # injury_impact_sum is positive (sum of impact of missing players). 
-    # If key players missing, impact is high. We subtract this from score.
     injury_penalty = injury_impact_sum * WEIGHTS["injury_factor"]
     
     # 4. H2H & Rivalry
-    # Lookup H2H stats from proba_dataset (averaged for this opponent)
-    h2h_bonus = 0
-    rivalry_penalty = 0
+    h2h_bonus = 0.0
+    rivalry_penalty = 0.0
+    h2h_win_rate_5 = 0.0
+    h2h_loss_rate_5 = 0.0
+    h2h_matches_5 = 0
+    ol_home_rank = int(ol_stats["rank"])
+    ol_away_rank = int(ol_stats["rank"])
+    opp_home_rank = int(row["rank"])
+    opp_away_rank = int(row["rank"])
+    opp_vs_top_teams_ppm = float(row.get("points_per_match", opp_ppm))
     
     if not proba_dataset.empty:
-        # Find rows for this opponent
-        opp_h2h = proba_dataset[proba_dataset['opponent'] == row['team']]
+        opp_h2h = proba_dataset[proba_dataset["opponent"] == row["team"]]
         if not opp_h2h.empty:
-            # Use the latest match's H2H stats or average
-            # Let's take the mean of h2h5_win_rate (recent form vs this team)
-            avg_h2h_win = opp_h2h['h2h5_win_rate'].mean()
-            avg_h2h_loss = opp_h2h['h2h5_loss_rate'].mean()
-            
-            # If we win often, bonus. If we lose often, penalty.
+            avg_h2h_win = opp_h2h["h2h5_win_rate"].mean()
+            avg_h2h_loss = opp_h2h["h2h5_loss_rate"].mean()
             h2h_bonus = (avg_h2h_win - avg_h2h_loss) * WEIGHTS["h2h_recent"]
-            
-            # Rivalry
-            avg_rivalry = opp_h2h['rivalry_index'].mean()
-            if avg_rivalry > 0.5:
-                 rivalry_penalty = avg_rivalry * WEIGHTS["rivalry"]
+            h2h_win_rate_5 = float(avg_h2h_win)
+            h2h_loss_rate_5 = float(avg_h2h_loss)
+            if "h2h_matches_played" in opp_h2h.columns:
+                h2h_matches_5 = int(opp_h2h["h2h_matches_played"].mean())
+            if "rivalry_index" in opp_h2h.columns:
+                avg_rivalry = opp_h2h["rivalry_index"].mean()
+                if avg_rivalry > 0.5:
+                    rivalry_penalty = avg_rivalry * WEIGHTS["rivalry"]
+            if "ol_home_rank" in opp_h2h.columns:
+                ol_home_rank = int(opp_h2h["ol_home_rank"].iloc[0])
+            if "ol_away_rank" in opp_h2h.columns:
+                ol_away_rank = int(opp_h2h["ol_away_rank"].iloc[0])
+            if "opp_home_rank" in opp_h2h.columns:
+                opp_home_rank = int(opp_h2h["opp_home_rank"].iloc[0])
+            if "opp_away_rank" in opp_h2h.columns:
+                opp_away_rank = int(opp_h2h["opp_away_rank"].iloc[0])
 
-    # Total Score Calculation (Logits)
-    score = (ppm_diff * WEIGHTS["ppm_diff"]) + \
-            (rank_diff * WEIGHTS["rank_diff"]) + \
-            home_bonus + \
-            h2h_bonus - \
-            injury_penalty - \
-            rivalry_penalty
-            
-    # Convert to Probability
-    proba_win = sigmoid(score)
-    
-    # Adjust Draw/Loss probas (simplified)
-    # Draw is likely when teams are even (proba_win near 0.5)
-    # We distribute remaining proba between Draw and Loss
-    remainder = 1.0 - proba_win
-    
-    # Draw proba curve: peaks at 0.5 win proba
-    draw_factor = 4 * proba_win * (1 - proba_win) # Parabola peaking at 0.25-0.30 usually
-    proba_draw = 0.25 * draw_factor + 0.1 # Base draw proba approx 10-30%
-    
-    # Normalize
-    total = proba_win + proba_draw + remainder
-    proba_win /= total
-    proba_draw /= total
-    proba_loss = 1.0 - proba_win - proba_draw
-    
     # Get stats for UI comparison
     if is_home:
-        ol_gf = ol_stats['home_goals_for_per_match']
-        ol_ga = ol_stats['home_goals_against_per_match']
-        opp_gf = row['away_goals_for_per_match']
-        opp_ga = row['away_goals_against_per_match']
+        ol_gf = ol_stats["home_goals_for_per_match"]
+        ol_ga = ol_stats["home_goals_against_per_match"]
+        opp_gf = row["away_goals_for_per_match"]
+        opp_ga = row["away_goals_against_per_match"]
     else:
-        ol_gf = ol_stats['away_goals_for_per_match']
-        ol_ga = ol_stats['away_goals_against_per_match']
-        opp_gf = row['home_goals_for_per_match']
-        opp_ga = row['home_goals_against_per_match']
+        ol_gf = ol_stats["away_goals_for_per_match"]
+        ol_ga = ol_stats["away_goals_against_per_match"]
+        opp_gf = row["home_goals_for_per_match"]
+        opp_ga = row["home_goals_against_per_match"]
+
+    # Output delegated to core_match_engine
+    ctx = MatchContext(
+        opponent=row["team"],
+        is_home=bool(is_home),
+        key_absences_count=int(key_absences_count),
+        key_absences_impact=float(injury_impact_sum),
+        ppm_last_5=float(ol_ppm),
+        ppm_last_10=float(ol_stats.get("points_per_match", ol_ppm)),
+        opp_ppm_last_5=float(opp_ppm),
+        opp_ppm_last_10=float(row.get("points_per_match", opp_ppm)),
+        ol_rank=int(ol_stats["rank"]),
+        opp_rank=int(row["rank"]),
+        ol_home_rank=int(ol_home_rank),
+        ol_away_rank=int(ol_away_rank),
+        opp_home_rank=int(opp_home_rank),
+        opp_away_rank=int(opp_away_rank),
+        h2h_win_rate_5=float(h2h_win_rate_5),
+        h2h_loss_rate_5=float(h2h_loss_rate_5),
+        h2h_matches_5=int(h2h_matches_5),
+        opp_vs_top_teams_ppm=float(opp_vs_top_teams_ppm),
+        league_ppm_top_threshold=float(LEAGUE_TOP_PPM_THRESHOLD),
+    )
+    engine_result = compute_match_prediction(ctx)
+    proba = engine_result["probabilities"]
+    global_score = engine_result["global_score"]
+    proba_win = proba["win"]
+    proba_draw = proba["draw"]
+    proba_loss = proba["loss"]
 
     return pd.Series({
-        'opponent': row['team'],
-        'venue': 'Home' if is_home else 'Away',
-        'proba_win': round(proba_win * 100, 1),
-        'proba_draw': round(proba_draw * 100, 1),
-        'proba_loss': round(proba_loss * 100, 1),
-        'score_raw': round(score, 2),
-        'injury_penalty': round(injury_penalty, 2),
-        'ppm_diff': round(ppm_diff, 2),
-        'h2h_bonus': round(h2h_bonus, 2),
-        'rivalry_penalty': round(rivalry_penalty, 2),
-        'ol_gf': round(ol_gf, 2),
-        'ol_ga': round(ol_ga, 2),
-        'opp_gf': round(opp_gf, 2),
-        'opp_ga': round(opp_ga, 2),
-        'ol_ppm': round(ol_ppm, 2),
-        'opp_ppm': round(opp_ppm, 2)
+        "opponent": row["team"],
+        "venue": "Home" if is_home else "Away",
+        "proba_win": round(proba_win * 100, 1),
+        "proba_draw": round(proba_draw * 100, 1),
+        "proba_loss": round(proba_loss * 100, 1),
+        "score_raw": round(global_score, 2),
+        "injury_penalty": round(injury_penalty, 2),
+        "ppm_diff": round(ppm_diff, 2),
+        "h2h_bonus": round(h2h_bonus, 2),
+        "rivalry_penalty": round(rivalry_penalty, 2),
+        "ol_gf": round(ol_gf, 2),
+        "ol_ga": round(ol_ga, 2),
+        "opp_gf": round(opp_gf, 2),
+        "opp_ga": round(opp_ga, 2),
+        "ol_ppm": round(ol_ppm, 2),
+        "opp_ppm": round(opp_ppm, 2),
+        "engine_explanation": engine_result["explanation"],
     })
 
 def main():
@@ -227,12 +245,12 @@ def main():
         # Match player name (fuzzy or direct)
         # Direct match for now
         impact = player_impacts.get(player, 0.0)
-        # If impact is negative (team plays better without him), ignore it or treat as 0 for injury penalty
-        # Usually we only care if a GOOD player is missing.
+        # If player has negative impact (team plays better without him), ignore for injury penalty
         if impact > 0:
             total_injury_impact += impact
             injured_details.append(f"{player} ({impact:.2f})")
             
+    key_absences_count = len(injured_details)
     print(f"Total Injury Impact Penalty: {total_injury_impact:.2f}")
     print(f"Key Absences: {', '.join(injured_details)}")
 
@@ -245,11 +263,25 @@ def main():
     
     for _, opp_row in opponents.iterrows():
         # Simulate HOME match
-        res_home = calculate_win_probability(opp_row, ol_stats, total_injury_impact, data['proba_dataset'], is_home=True)
+        res_home = calculate_win_probability(
+            opp_row,
+            ol_stats,
+            total_injury_impact,
+            key_absences_count,
+            data["proba_dataset"],
+            is_home=True,
+        )
         results.append(res_home)
         
         # Simulate AWAY match
-        res_away = calculate_win_probability(opp_row, ol_stats, total_injury_impact, data['proba_dataset'], is_home=False)
+        res_away = calculate_win_probability(
+            opp_row,
+            ol_stats,
+            total_injury_impact,
+            key_absences_count,
+            data["proba_dataset"],
+            is_home=False,
+        )
         results.append(res_away)
 
     df_results = pd.DataFrame(results)

@@ -4,20 +4,29 @@ import re
 
 print("=== RECUPERATION CLASSEMENT LIGUE 1 (DOMICILE/EXTERIEUR) ===")
 
-# Création des dossiers si nécessaire
-RAW_DIR = Path("data/raw")
+DATA_DIR = Path("data")
+RAW_DIR = DATA_DIR / "raw"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-raw_output = RAW_DIR / "ligue1_matches_raw.csv"
+MATCHES_FBREF_PATH = DATA_DIR / "ligue1_matches.csv"
+RAW_OUTPUT = RAW_DIR / "ligue1_matches_raw.csv"
 
-# Chargement des données existantes
-if not raw_output.exists():
-    print(f"ERREUR: Le fichier {raw_output} n'existe pas.")
-    print("Veuillez d'abord executer soccerdata_ligue1.py pour telecharger les donnees.")
+if MATCHES_FBREF_PATH.exists():
+    source_path = MATCHES_FBREF_PATH
+    mode = "fbref"
+else:
+    source_path = RAW_OUTPUT
+    mode = "soccerdata"
+
+if not source_path.exists():
+    print("ERREUR: Aucun fichier de matchs Ligue 1 trouve.")
+    print(f"  - {MATCHES_FBREF_PATH}")
+    print(f"  - {RAW_OUTPUT}")
+    print("Veuillez d'abord executer update_data.py ou soccerdata_ligue1.py pour telecharger les donnees.")
     exit(1)
 
-print(f"Chargement des donnees depuis {raw_output}...")
-df_matches = pd.read_csv(raw_output)
+print(f"Chargement des donnees depuis {source_path} ({'FBref' if mode == 'fbref' else 'soccerdata'})...")
+df_matches = pd.read_csv(source_path)
 print(f"OK - {len(df_matches)} lignes chargees")
 
 # Fonction pour extraire le nom de l'équipe depuis match_report
@@ -163,38 +172,91 @@ print("\nCalcul du classement...")
 # Préparation des données
 standings_data = []
 
-for idx, row in df_matches.iterrows():
-    team = get_team_from_match(row)
-    venue = row.get("venue", "")
-    result = row.get("result", "")
-    gf = pd.to_numeric(row.get("GF", 0), errors="coerce") or 0
-    ga = pd.to_numeric(row.get("GA", 0), errors="coerce") or 0
-    
-    if not team or pd.isna(venue) or pd.isna(result):
-        if idx < 5:  # Afficher les erreurs pour les premières lignes seulement
-            print(f"Ligne {idx}: team={team}, venue={venue}, result={result}")
-        continue
-    
-    points = get_points(result)
-    
-    # Stats générales
-    standings_data.append({
-        "team": team,
-        "venue": "All",
-        "matches": 1,
-        "wins": 1 if result == "W" else 0,
-        "draws": 1 if result == "D" else 0,
-        "losses": 1 if result == "L" else 0,
-        "goals_for": gf,
-        "goals_against": ga,
-        "points": points
-    })
-    
-    # Stats domicile
-    if venue == "Home":
+if mode == "fbref":
+    if "home_team" not in df_matches.columns or "away_team" not in df_matches.columns or "score" not in df_matches.columns:
+        print("ERREUR: Colonnes home_team, away_team ou score manquantes dans ligue1_matches.csv")
+        exit(1)
+
+    if "season" in df_matches.columns:
+        seasons = sorted(str(s) for s in df_matches["season"].dropna().unique())
+        if seasons:
+            current_season = seasons[-1]
+            df_matches = df_matches[df_matches["season"].astype(str) == current_season].copy()
+            print(f"Saison utilisee: {current_season} ({len(df_matches)} lignes)")
+
+    for idx, row in df_matches.iterrows():
+        score = str(row.get("score", ""))
+        parts = re.split(r"[-–]", score)
+        if len(parts) != 2:
+            continue
+        try:
+            home_goals = int(parts[0].strip())
+            away_goals = int(parts[1].strip())
+        except ValueError:
+            continue
+
+        home_team = str(row.get("home_team", "")).strip()
+        away_team = str(row.get("away_team", "")).strip()
+        if not home_team or not away_team:
+            continue
+
+        if home_goals > away_goals:
+            home_result = "W"
+            away_result = "L"
+        elif home_goals == away_goals:
+            home_result = "D"
+            away_result = "D"
+        else:
+            home_result = "L"
+            away_result = "W"
+
+        for team, venue, gf, ga, result in [
+            (home_team, "Home", home_goals, away_goals, home_result),
+            (away_team, "Away", away_goals, home_goals, away_result),
+        ]:
+            points = get_points(result)
+
+            standings_data.append({
+                "team": team,
+                "venue": "All",
+                "matches": 1,
+                "wins": 1 if result == "W" else 0,
+                "draws": 1 if result == "D" else 0,
+                "losses": 1 if result == "L" else 0,
+                "goals_for": gf,
+                "goals_against": ga,
+                "points": points
+            })
+
+            standings_data.append({
+                "team": team,
+                "venue": venue,
+                "matches": 1,
+                "wins": 1 if result == "W" else 0,
+                "draws": 1 if result == "D" else 0,
+                "losses": 1 if result == "L" else 0,
+                "goals_for": gf,
+                "goals_against": ga,
+                "points": points
+            })
+else:
+    for idx, row in df_matches.iterrows():
+        team = get_team_from_match(row)
+        venue = row.get("venue", "")
+        result = row.get("result", "")
+        gf = pd.to_numeric(row.get("GF", 0), errors="coerce") or 0
+        ga = pd.to_numeric(row.get("GA", 0), errors="coerce") or 0
+        
+        if not team or pd.isna(venue) or pd.isna(result):
+            if idx < 5:
+                print(f"Ligne {idx}: team={team}, venue={venue}, result={result}")
+            continue
+        
+        points = get_points(result)
+        
         standings_data.append({
             "team": team,
-            "venue": "Home",
+            "venue": "All",
             "matches": 1,
             "wins": 1 if result == "W" else 0,
             "draws": 1 if result == "D" else 0,
@@ -203,20 +265,31 @@ for idx, row in df_matches.iterrows():
             "goals_against": ga,
             "points": points
         })
-    
-    # Stats extérieur
-    elif venue == "Away":
-        standings_data.append({
-            "team": team,
-            "venue": "Away",
-            "matches": 1,
-            "wins": 1 if result == "W" else 0,
-            "draws": 1 if result == "D" else 0,
-            "losses": 1 if result == "L" else 0,
-            "goals_for": gf,
-            "goals_against": ga,
-            "points": points
-        })
+        
+        if venue == "Home":
+            standings_data.append({
+                "team": team,
+                "venue": "Home",
+                "matches": 1,
+                "wins": 1 if result == "W" else 0,
+                "draws": 1 if result == "D" else 0,
+                "losses": 1 if result == "L" else 0,
+                "goals_for": gf,
+                "goals_against": ga,
+                "points": points
+            })
+        elif venue == "Away":
+            standings_data.append({
+                "team": team,
+                "venue": "Away",
+                "matches": 1,
+                "wins": 1 if result == "W" else 0,
+                "draws": 1 if result == "D" else 0,
+                "losses": 1 if result == "L" else 0,
+                "goals_for": gf,
+                "goals_against": ga,
+                "points": points
+            })
 
 # Création du DataFrame
 df_standings = pd.DataFrame(standings_data)

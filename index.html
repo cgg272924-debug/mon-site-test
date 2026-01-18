@@ -394,16 +394,20 @@
                             <div class="w-full bg-slate-700 h-2 rounded-full mt-2">
                                 <div id="prob-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
                             </div>
+                            <div class="mt-2 text-xs text-gray-400 space-y-1">
+                                <div>Match nul : <span id="prob-draw">--%</span></div>
+                                <div>Victoire adverse : <span id="prob-loss">--%</span></div>
+                            </div>
                         </div>
                         <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
                             <h4 class="text-gray-400 text-sm mb-1">Score Prédit</h4>
                             <div class="text-2xl font-bold text-white" id="pred-score">-- - --</div>
-                            <p class="text-xs text-gray-500 mt-1">Basé sur la forme récente</p>
+                            <p class="text-xs text-gray-500 mt-1">Basé sur le moteur explicable</p>
                         </div>
                         <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
                             <h4 class="text-gray-400 text-sm mb-1">Buts Attendus (xG)</h4>
                             <div class="text-2xl font-bold text-green-400" id="pred-xg">--</div>
-                            <p class="text-xs text-gray-500 mt-1">Moyenne offensive</p>
+                            <p class="text-xs text-gray-500 mt-1">xG attendu pour l'OL</p>
                         </div>
                         <div class="stat-card-detailed bg-slate-800 p-4 rounded-xl border border-slate-700">
                             <h4 class="text-gray-400 text-sm mb-1">Forme (5 derniers)</h4>
@@ -469,28 +473,26 @@
 
                         <div class="analysis-card bg-slate-800/50 p-6 rounded-xl border border-slate-700">
                             <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                                <span>🎯</span> Joueurs à Suivre
+                                <span>🧠</span> Analyse du moteur
                             </h3>
-                            <div class="space-y-4" id="key-players-list">
-                                <div class="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">OL</div>
-                                        <div>
-                                            <div class="font-bold">Meilleur Buteur</div>
-                                            <div class="text-xs text-gray-400">Potentiel offensif élevé</div>
-                                        </div>
-                                    </div>
-                                    <span class="text-green-400 font-bold">Lacazette / Fofana</span>
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-100 mb-2">Pourquoi ce résultat ?</h4>
+                                    <p id="engine-explanation-text" class="text-sm text-slate-300">
+                                        Lancez une analyse pour voir l'explication complète du moteur.
+                                    </p>
                                 </div>
-                                <div class="p-3 bg-slate-700/50 rounded-lg flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">OL</div>
-                                        <div>
-                                            <div class="font-bold">Impact Créatif</div>
-                                            <div class="text-xs text-gray-400">Création d'occasions</div>
-                                        </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-100 mb-2">Facteurs clés</h4>
+                                    <ul id="engine-key-factors" class="text-sm text-slate-300 space-y-1">
+                                        <li>En attente d'analyse.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-100 mb-2">Stats avancées</h4>
+                                    <div id="engine-advanced-stats" class="text-sm text-slate-300 space-y-1">
+                                        <div>xG attendu, impact des absences et rating global seront affichés ici.</div>
                                     </div>
-                                    <span class="text-green-400 font-bold">Cherki / Tolisso</span>
                                 </div>
                             </div>
                         </div>
