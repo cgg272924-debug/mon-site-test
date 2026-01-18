@@ -1,12 +1,15 @@
 import pandas as pd
 
-print("=== ETAPE 1 FIX — CREATION LINEUPS AVEC RESULTATS ===")
+print("=== ETAPE 1 FIX — CREATION LINEUPS AVEC RESULTATS (XI TITULAIRES) ===")
 
 lineups = pd.read_csv("data/processed/ol_lineups_by_match.csv")
 matches = pd.read_csv("data/processed/ol_matches_with_match_key.csv")
 
 print("Lineups :", lineups.shape)
 print("Matchs :", matches.shape)
+
+if "is_starter" in lineups.columns:
+    lineups = lineups[lineups["is_starter"]]
 
 lineup_combos = (
     lineups.groupby("match_key")["player"]

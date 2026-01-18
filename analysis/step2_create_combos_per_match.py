@@ -9,6 +9,9 @@ matches = pd.read_csv("data/processed/ol_matches_with_match_key.csv")
 print("Lineups chargées :", lineups.shape)
 print("Matchs chargés  :", matches.shape)
 
+if "is_starter" in lineups.columns:
+    lineups = lineups[lineups["is_starter"]]
+
 matches_lookup = matches.set_index("match_key")
 
 rows = []

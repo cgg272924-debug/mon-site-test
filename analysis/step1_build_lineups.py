@@ -6,6 +6,7 @@ players = pd.read_csv("data/processed/ol_players_with_match_key.csv")
 
 print("Joueurs chargés :", players.shape)
 
+players["minutes_played"] = pd.to_numeric(players["minutes_played"], errors="coerce").fillna(0)
 players = players[players["minutes_played"] > 0]
 
 cols_lineups_by_match = [
@@ -22,6 +23,19 @@ cols_lineups_by_match = [
 existing_cols = [c for c in cols_lineups_by_match if c in players.columns]
 
 lineups_long = players[existing_cols].copy()
+
+def mark_starters(group: pd.DataFrame) -> pd.DataFrame:
+    group = group.sort_values("minutes_played", ascending=False)
+    n = len(group)
+    starters_count = min(11, n)
+    starter_flags = [True] * starters_count + [False] * max(0, n - starters_count)
+    group["is_starter"] = starter_flags
+    return group
+
+lineups_long = (
+    lineups_long.groupby("match_key", group_keys=False)
+    .apply(mark_starters)
+)
 
 lineups_long.to_csv(
     "data/processed/ol_lineups_by_match.csv",

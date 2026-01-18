@@ -26,7 +26,10 @@ print("✅ Matchs traités :", matches_out.shape)
 # ===== PLAYERS =====
 players = pd.read_csv("data/processed/ol_player_minutes.csv")
 
-# 👉 EXTRACTION DE LA DATE (les 10 premiers caractères)
+players["season"] = pd.to_numeric(players["season"], errors="coerce")
+current_season = players["season"].max()
+players = players[players["season"] == current_season]
+
 players["game_date"] = players["game"].astype(str).str[:10]
 players["game_date"] = pd.to_datetime(players["game_date"], errors="coerce").dt.date
 
