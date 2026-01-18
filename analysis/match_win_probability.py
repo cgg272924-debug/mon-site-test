@@ -10,8 +10,11 @@ INPUT_FILES = {
     "standings": "league1_standings_home_away.csv",
     "proba_dataset": "ol_match_proba_dataset.csv",
     "injuries": "ol_injuries_transfermarkt.csv",
+    "squad": "match_squad_available.csv",
     "lineups": "ol_match_lineups.csv",
-    "matches": "ol_matches_with_match_key.csv"
+    "matches": "ol_matches_with_match_key.csv",
+    "understat_profiles": "league1_understat_team_profiles.csv",
+    "understat_similarity": "league1_understat_team_similarity.csv",
 }
 OUTPUT_FILE = DATA_DIR / "ol_next_match_simulation.csv"
 
@@ -92,10 +95,86 @@ def calculate_player_impact(df_lineups, df_matches):
 
     return player_stats
 
+
+def build_injury_absence_from_transfermarkt(df_injuries, player_impacts):
+    if df_injuries is None or df_injuries.empty:
+        return 0.0, 0, []
+    total = 0.0
+    players = []
+    for player in df_injuries.get("player", []):
+        name = str(player)
+        if not name:
+            continue
+        impact = float(player_impacts.get(name, 0.0))
+        if impact > 0:
+            total += impact
+            players.append(name)
+    return float(total), int(len(players)), players
+
+
+def build_absence_for_match(
+    opponent_name,
+    is_home,
+    squad_df,
+    player_impacts,
+    fallback_impact,
+    fallback_count,
+    fallback_players,
+):
+    if squad_df is not None and not squad_df.empty:
+        venue_label = "Home" if is_home else "Away"
+        df = squad_df.copy()
+        df["opponent_norm"] = (
+            df.get("opponent", "")
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
+        df["venue_norm"] = (
+            df.get("venue", "")
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
+        target_opp = str(opponent_name or "").strip().lower()
+        target_venue = venue_label.lower()
+        mask = (df["opponent_norm"] == target_opp) & (df["venue_norm"] == target_venue)
+        match_rows = df[mask]
+        if not match_rows.empty:
+            rows = match_rows
+            if "available" in rows.columns:
+                avail = pd.to_numeric(rows["available"], errors="coerce")
+                rows = rows[avail == 0]
+            absent_players = []
+            total = 0.0
+            for player in rows.get("player", []):
+                name = str(player)
+                if not name:
+                    continue
+                impact = float(player_impacts.get(name, 0.0))
+                if impact > 0:
+                    total += impact
+                    absent_players.append(name)
+            return {
+                "impact": float(total),
+                "count": int(len(absent_players)),
+                "analysis_type": "with_official_squad",
+                "source": "squad",
+                "absent_players": absent_players,
+            }
+    return {
+        "impact": float(fallback_impact),
+        "count": int(fallback_count),
+        "analysis_type": "pre_group",
+        "source": "injuries",
+        "absent_players": list(fallback_players),
+    }
+
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
-def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_count, proba_dataset, is_home=True):
+def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_count, proba_dataset, understat_profiles, understat_similarity, is_home=True):
     """
     Calculate win probability for OL against a specific opponent.
     row: Opponent stats row from standings
@@ -131,6 +210,10 @@ def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_cou
     opp_home_rank = int(row["rank"])
     opp_away_rank = int(row["rank"])
     opp_vs_top_teams_ppm = float(row.get("points_per_match", opp_ppm))
+    understat_xg_diff = 0.0
+    understat_shots_diff = 0.0
+    understat_field_tilt_diff = 0.0
+    similarity_score = 0.0
     
     if not proba_dataset.empty:
         opp_h2h = proba_dataset[proba_dataset["opponent"] == row["team"]]
@@ -154,6 +237,37 @@ def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_cou
                 opp_home_rank = int(opp_h2h["opp_home_rank"].iloc[0])
             if "opp_away_rank" in opp_h2h.columns:
                 opp_away_rank = int(opp_h2h["opp_away_rank"].iloc[0])
+
+    if not understat_profiles.empty:
+        prof_ol = understat_profiles[understat_profiles["team"] == "Lyon"]
+        prof_opp = understat_profiles[understat_profiles["team"] == row["team"]]
+        if not prof_ol.empty and not prof_opp.empty:
+            p_ol = prof_ol.iloc[0]
+            p_opp = prof_opp.iloc[0]
+            understat_xg_diff = float(p_ol.get("xg_per_match", 0.0) - p_opp.get("xg_per_match", 0.0))
+            understat_shots_diff = float(p_ol.get("shots_per90", 0.0) - p_opp.get("shots_per90", 0.0))
+            understat_field_tilt_diff = float(p_ol.get("field_tilt_avg", 0.0) - p_opp.get("field_tilt_avg", 0.0))
+
+    if not understat_similarity.empty and not proba_dataset.empty:
+        team_key = str(row["team"]).strip().lower()
+        sim_rows = understat_similarity[
+            understat_similarity["team"].astype(str).str.strip().str.lower() == team_key
+        ]
+        if not sim_rows.empty:
+            top_sim = sim_rows[sim_rows["rank"] <= 5]
+            similar_teams = (
+                top_sim["similar_team"].astype(str).str.strip().str.lower().tolist()
+            )
+            hist = proba_dataset[
+                proba_dataset["opponent"].astype(str).str.strip().str.lower().isin(
+                    similar_teams
+                )
+            ]
+            if not hist.empty:
+                ppm_vs_similar = float(hist["result_points"].mean())
+                overall_ppm = float(proba_dataset["result_points"].mean())
+                diff_ppm = ppm_vs_similar - overall_ppm
+                similarity_score = max(-1.0, min(1.0, diff_ppm / 1.5))
 
     # Get stats for UI comparison
     if is_home:
@@ -188,6 +302,10 @@ def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_cou
         h2h_matches_5=int(h2h_matches_5),
         opp_vs_top_teams_ppm=float(opp_vs_top_teams_ppm),
         league_ppm_top_threshold=float(LEAGUE_TOP_PPM_THRESHOLD),
+        understat_xg_diff=float(understat_xg_diff),
+        understat_shots_diff=float(understat_shots_diff),
+        understat_field_tilt_diff=float(understat_field_tilt_diff),
+        similarity_score=float(similarity_score),
     )
     engine_result = compute_match_prediction(ctx)
     proba = engine_result["probabilities"]
@@ -214,6 +332,10 @@ def calculate_win_probability(row, ol_stats, injury_impact_sum, key_absences_cou
         "ol_ppm": round(ol_ppm, 2),
         "opp_ppm": round(opp_ppm, 2),
         "engine_explanation": engine_result["explanation"],
+        "understat_xg_diff": round(understat_xg_diff, 3),
+        "understat_shots_diff": round(understat_shots_diff, 3),
+        "understat_field_tilt_diff": round(understat_field_tilt_diff, 3),
+        "similarity_score": round(similarity_score, 3),
     })
 
 def main():
@@ -232,27 +354,19 @@ def main():
     print("Calculating player impacts...")
     player_impacts = calculate_player_impact(data['lineups'], data['matches'])
     
-    # 3. Calculate Current Injury Penalty
     print("Processing injuries...")
-    current_injuries = []
-    if not data['injuries'].empty:
-        current_injuries = data['injuries']['player'].tolist()
-    
-    total_injury_impact = 0.0
-    injured_details = []
-    
-    for player in current_injuries:
-        # Match player name (fuzzy or direct)
-        # Direct match for now
-        impact = player_impacts.get(player, 0.0)
-        # If player has negative impact (team plays better without him), ignore for injury penalty
-        if impact > 0:
-            total_injury_impact += impact
-            injured_details.append(f"{player} ({impact:.2f})")
-            
-    key_absences_count = len(injured_details)
-    print(f"Total Injury Impact Penalty: {total_injury_impact:.2f}")
-    print(f"Key Absences: {', '.join(injured_details)}")
+    fallback_injury_impact, fallback_abs_count, fallback_abs_players = (
+        build_injury_absence_from_transfermarkt(data.get("injuries"), player_impacts)
+    )
+    print(f"Total Injury Impact Penalty (fallback): {fallback_injury_impact:.2f}")
+    if fallback_abs_players:
+        print("Key Absences (fallback): " + ", ".join(fallback_abs_players))
+    else:
+        print("Key Absences (fallback): none")
+
+    squad_df = data.get("squad")
+    if squad_df is None:
+        squad_df = pd.DataFrame()
 
     # 4. Simulate Next Matches (vs All Opponents)
     print("Simulating probabilities vs all Ligue 1 opponents...")
@@ -263,25 +377,53 @@ def main():
     
     for _, opp_row in opponents.iterrows():
         # Simulate HOME match
+        home_abs = build_absence_for_match(
+            opp_row["team"],
+            True,
+            squad_df,
+            player_impacts,
+            fallback_injury_impact,
+            fallback_abs_count,
+            fallback_abs_players,
+        )
         res_home = calculate_win_probability(
             opp_row,
             ol_stats,
-            total_injury_impact,
-            key_absences_count,
+            home_abs["impact"],
+            home_abs["count"],
             data["proba_dataset"],
+            data["understat_profiles"],
+            data["understat_similarity"],
             is_home=True,
         )
+        res_home["analysis_type"] = home_abs["analysis_type"]
+        res_home["absences_source"] = home_abs["source"]
+        res_home["absent_players"] = "; ".join(home_abs["absent_players"])
         results.append(res_home)
         
         # Simulate AWAY match
+        away_abs = build_absence_for_match(
+            opp_row["team"],
+            False,
+            squad_df,
+            player_impacts,
+            fallback_injury_impact,
+            fallback_abs_count,
+            fallback_abs_players,
+        )
         res_away = calculate_win_probability(
             opp_row,
             ol_stats,
-            total_injury_impact,
-            key_absences_count,
+            away_abs["impact"],
+            away_abs["count"],
             data["proba_dataset"],
+            data["understat_profiles"],
+            data["understat_similarity"],
             is_home=False,
         )
+        res_away["analysis_type"] = away_abs["analysis_type"]
+        res_away["absences_source"] = away_abs["source"]
+        res_away["absent_players"] = "; ".join(away_abs["absent_players"])
         results.append(res_away)
 
     df_results = pd.DataFrame(results)

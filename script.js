@@ -402,6 +402,9 @@ function getResultBadge(result) {
     return 'badge';
 }
 
+let keyPlayersData = [];
+let playerPrimaryPosMap = {};
+
 // Charger les matchs
 async function loadMatches() {
     try {
@@ -459,48 +462,28 @@ async function loadMatches() {
     }
 }
 
-// Charger les joueurs
 async function loadPlayers() {
     try {
+        console.log('[loadPlayers] start');
         const response = await fetch(cacheBust('data/processed/ol_key_players.csv'));
+        console.log('[loadPlayers] response status', response.status);
+        if (!response.ok) {
+            throw new Error('Erreur HTTP ' + response.status + ' ' + response.statusText);
+        }
         const text = await response.text();
+        console.log('[loadPlayers] csv length', text.length);
         const players = parseCSV(text);
-        
-        const tbody = document.getElementById('players-tbody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        // Trier par importance (plus important en premier)
-        players.sort((a, b) => parseFloat(b.importance || 0) - parseFloat(a.importance || 0));
-        
-        players.forEach(player => {
-            const row = document.createElement('tr');
-            row.style.cursor = 'pointer';
-            row.innerHTML = `
-                <td>${player.player || ''}</td>
-                <td>${player.pos || ''}</td>
-                <td>${parseInt(player['Playing Time_Min'] || 0).toLocaleString('fr-FR')}</td>
-                <td>${parseFloat(player.rating || 0).toFixed(1)}</td>
-                <td>${parseFloat(player.importance || 0).toFixed(2)}</td>
-            `;
-            
-            row.addEventListener('click', () => {
-                const content = `
-                    <div class="player-details">
-                        <h3>Détails du Joueur</h3>
-                        <p><strong>Nom:</strong> ${player.player || ''}</p>
-                        <p><strong>Position:</strong> ${player.pos || ''}</p>
-                        <p><strong>Temps de Jeu:</strong> ${parseInt(player['Playing Time_Min'] || 0).toLocaleString('fr-FR')} minutes</p>
-                        <p><strong>Note:</strong> ${parseFloat(player.rating || 0).toFixed(1)}</p>
-                        <p><strong>Importance:</strong> ${parseFloat(player.importance || 0).toFixed(2)}</p>
-                    </div>
-                `;
-                createModal(`Joueur: ${player.player || ''}`, content);
-            });
-            
-            tbody.appendChild(row);
-        });
+        console.log('[loadPlayers] parsed rows', Array.isArray(players) ? players.length : 'invalid');
+        keyPlayersData = Array.isArray(players) ? players : [];
+        const roleSelect = document.getElementById('players-filter-role');
+        if (roleSelect) {
+            roleSelect.addEventListener('change', renderPlayersTable);
+        }
+        const minutesSelect = document.getElementById('players-filter-minutes');
+        if (minutesSelect) {
+            minutesSelect.addEventListener('change', renderPlayersTable);
+        }
+        renderPlayersTable();
     } catch (error) {
         console.error('Erreur lors du chargement des joueurs:', error);
         const tbody = document.getElementById('players-tbody');
@@ -508,6 +491,84 @@ async function loadPlayers() {
             tbody.innerHTML = '<tr><td colspan="5" class="error">Erreur lors du chargement des données</td></tr>';
         }
     }
+}
+
+function renderPlayersTable() {
+    const tbody = document.getElementById('players-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!Array.isArray(keyPlayersData) || keyPlayersData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="error">Aucun joueur trouvé dans le CSV</td></tr>';
+        return;
+    }
+    const roleSelect = document.getElementById('players-filter-role');
+    const minutesSelect = document.getElementById('players-filter-minutes');
+    const roleFilter = roleSelect ? roleSelect.value : 'all';
+    const minutesFilter = minutesSelect ? parseInt(minutesSelect.value || '0', 10) : 0;
+    const players = keyPlayersData.slice();
+    players.sort((a, b) => parseFloat(b.importance || 0) - parseFloat(a.importance || 0));
+    players.forEach(player => {
+        const minutes = parseInt(player['Playing Time_Min'] || 0);
+        const posEn = (player.pos || '').toString();
+        const posFr = (player.pos_fr || translatePositionFr(posEn));
+        const role = getRoleBucket(posEn);
+        if (roleFilter !== 'all' && role !== roleFilter) {
+            return;
+        }
+        if (!Number.isNaN(minutes) && minutesFilter > 0 && minutes < minutesFilter) {
+            return;
+        }
+        const gls90 = parseFloat(player['Per 90 Minutes_Gls'] || 0) || 0;
+        const ast90 = parseFloat(player['Per 90 Minutes_Ast'] || 0) || 0;
+        const xg90 = parseFloat(player['Per 90 Minutes_xG'] || 0) || 0;
+        const xag90 = parseFloat(player['Per 90 Minutes_xAG'] || 0) || 0;
+        const prgC = parseFloat(player['Progression_PrgC'] || 0) || 0;
+        const prgP = parseFloat(player['Progression_PrgP'] || 0) || 0;
+        const prgR = parseFloat(player['Progression_PrgR'] || 0) || 0;
+        const crdY = parseInt(player['Performance_CrdY'] || 0);
+        const crdR = parseInt(player['Performance_CrdR'] || 0);
+        const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+            <td>${player.player || ''}</td>
+            <td>${posFr}</td>
+            <td>${Number.isNaN(minutes) ? '' : minutes.toLocaleString('fr-FR')}</td>
+            <td>${parseFloat(player.rating || 0).toFixed(1)}</td>
+            <td>${parseFloat(player.importance || 0).toFixed(2)}</td>
+        `;
+        row.addEventListener('click', () => {
+            const content = `
+                <div class="player-details">
+                    <h3>Détails du Joueur</h3>
+                    <p><strong>Nom:</strong> ${player.player || ''}</p>
+                    <p><strong>Position:</strong> ${posFr}</p>
+                    <p><strong>Temps de Jeu:</strong> ${Number.isNaN(minutes) ? 'N/A' : minutes.toLocaleString('fr-FR')} minutes</p>
+                    <p><strong>Note:</strong> ${parseFloat(player.rating || 0).toFixed(1)}</p>
+                    <p><strong>Importance:</strong> ${parseFloat(player.importance || 0).toFixed(2)}</p>
+                    <hr>
+                    <p><strong>Buts / 90:</strong> ${gls90.toFixed(2)}</p>
+                    <p><strong>Passes D. / 90:</strong> ${ast90.toFixed(2)}</p>
+                    <p><strong>xG / 90:</strong> ${xg90.toFixed(2)}</p>
+                    <p><strong>xAG / 90:</strong> ${xag90.toFixed(2)}</p>
+                    <p><strong>Progression (conduite / passes / réceptions):</strong> ${prgC} / ${prgP} / ${prgR}</p>
+                    <p><strong>Cartons (J/R):</strong> ${crdY} / ${crdR}</p>
+                    <hr>
+                    <p><strong>Comment est calculée cette note ?</strong></p>
+                    <p>${
+                        role === 'gardien'
+                            ? "Profil gardien : la note donne beaucoup de poids au temps de jeu, à l'activité défensive/progressive (relance, jeu au pied) et à la discipline. Les stats offensives comptent très peu."
+                            : role === 'défenseur'
+                            ? "Profil défenseur : la note valorise surtout le temps de jeu, la progression (conduites, passes vers l'avant) et la discipline. Les buts/xG comptent mais restent secondaires."
+                            : role === 'milieu'
+                            ? "Profil milieu : la note équilibre contribution offensive (buts, passes décisives, xG/xAG), progression du ballon et discipline, avec un poids non négligeable pour les minutes jouées."
+                            : "Profil offensif : la note est fortement portée par les stats offensives (buts, passes décisives, xG/xAG), complétées par la progression du ballon, la discipline et le temps de jeu."
+                    }</p>
+                </div>
+            `;
+            createModal(`Joueur: ${player.player || ''}`, content);
+        });
+        tbody.appendChild(row);
+    });
 }
 
 function parseLineupMatchKey(rawKey) {
@@ -577,6 +638,8 @@ function translatePositionFr(pos) {
     const primary = p.split(',')[0].trim();
     const map = {
         GK: 'G',
+        DF: 'DC',
+        MF: 'MC',
         RB: 'DD',
         LB: 'DG',
         CB: 'DC',
@@ -596,6 +659,14 @@ function translatePositionFr(pos) {
         ST: 'BU'
     };
     return map[primary] || primary || '-';
+}
+
+function getRoleBucket(pos) {
+    const p = (pos || '').toUpperCase();
+    if (p.includes('GK')) return 'gardien';
+    if (p.includes('DF') || p.includes('CB') || p.includes('LB') || p.includes('RB')) return 'défenseur';
+    if (p.includes('MF') || p.includes('DM') || p.includes('CM')) return 'milieu';
+    return 'offensif';
 }
 
 function buildLineupPitch(players) {
@@ -696,7 +767,16 @@ function buildLineupPitchWithFormation(players, formationStr) {
         .slice()
         .sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
         .slice(0, Math.min(players.length, 11));
-    const toPrimary = x => (x || '').toUpperCase().split(',')[0].trim();
+    const toPrimary = x => {
+        const raw = (x || '').toUpperCase().split(',')[0].trim();
+        if (!raw) return '';
+        if (raw === 'G') return 'GK';
+        if (raw === 'GK') return 'GK';
+        if (raw === 'DF') return 'CB';
+        if (raw === 'MF') return 'CM';
+        if (raw === 'FW') return 'ST';
+        return raw;
+    };
     const data = sorted.map(p => ({
         name: p.name || '',
         pos: p.pos || '',
@@ -923,6 +1003,25 @@ async function loadLineups() {
                 minutes: parseInt(r.minutes_played || 0, 10) || 0
             });
         });
+        const normalizeName = name => {
+            return (name || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        };
+        const playerMeta = {};
+        minutesRows.forEach(r => {
+            const name = r.player || '';
+            if (!name) return;
+            const key = normalizeName(name);
+            if (!playerMeta[key]) {
+                playerMeta[key] = {
+                    pos: r.pos || '',
+                    pos_fr: r.pos_fr || ''
+                };
+            }
+        });
         function parsePlayersList(str) {
             const s = (str || '').trim();
             if (!s.startsWith('[') || !s.endsWith(']')) return [];
@@ -945,6 +1044,52 @@ async function loadLineups() {
                 aggByDate[date] = players;
             }
         });
+        if (matchesMap.size === 0 && Object.keys(aggByDate).length > 0) {
+            Object.entries(aggByDate).forEach(([dateKey, playersList]) => {
+                const meta = lookupRows.find(row => (row.date || '') === dateKey && (row.opponent || '').toLowerCase() !== 'lyon') || {};
+                const clean = cleanRows.find(row => (row.date || '') === dateKey && (row.opponent || '').toLowerCase() !== 'lyon') || {};
+                const opponent = meta.opponent || clean.opponent || '';
+                const venue = meta.venue || clean.venue || '';
+                const points = meta.points !== undefined && meta.points !== '' ? parseFloat(meta.points) : null;
+                const scoreFinal = meta.score_final !== undefined && meta.score_final !== '' ? parseFloat(meta.score_final) : null;
+                const formation = clean.Formation || '';
+                const gf = clean.GF !== undefined && clean.GF !== '' ? parseFloat(clean.GF) : null;
+                const ga = clean.GA !== undefined && clean.GA !== '' ? parseFloat(clean.GA) : null;
+                const formattedDate = dateKey ? formatDate(dateKey) : '';
+                let label = formattedDate || '';
+                if (formattedDate && opponent) {
+                    if (venue === 'Home') {
+                        label = `${formattedDate} • OL vs ${opponent}`;
+                    } else if (venue === 'Away') {
+                        label = `${formattedDate} • ${opponent} vs OL`;
+                    } else {
+                        label = `${formattedDate} • ${opponent}`;
+                    }
+                }
+                const key = `${dateKey}_${opponent || 'lyon'}`;
+                const matchPlayers = playersList.map(name => {
+                    const meta = playerMeta[normalizeName(name)] || {};
+                    return {
+                        name,
+                        pos: meta.pos || '',
+                        minutes: 0
+                    };
+                });
+                matchesMap.set(key, {
+                    key,
+                    date: dateKey,
+                    opponent,
+                    venue,
+                    points,
+                    scoreFinal,
+                    formation,
+                    gf,
+                    ga,
+                    label,
+                    players: matchPlayers
+                });
+            });
+        }
         function lineupKeyToGameStr(rawKey) {
             const v = (rawKey || '').trim();
             if (!v) return null;
@@ -1167,7 +1312,7 @@ async function loadStats() {
         }
 
         try {
-            const olStatsResponse = await fetch(cacheBust('data/ol_stats.csv'));
+            const olStatsResponse = await fetch(cacheBust('data/processed/ligue1_team_advanced_stats.csv'));
             const olStatsText = await olStatsResponse.text();
             const olStatsRows = parseCSV(olStatsText);
             const olStatsDiv = document.getElementById('ol-fbref-stats');
@@ -1200,10 +1345,10 @@ async function loadStats() {
 
                 const goalsFor = getNumber(['goals_for', 'gf', 'goals']);
                 const goalsAgainst = getNumber(['goals_against', 'ga']);
-                const xgFor = getNumber(['xg_for', 'xg']);
-                const xgAgainst = getNumber(['xg_against', 'xga']);
-                const shots = getNumber(['shots', 'shots_total']);
-                const possession = getNumber(['possession']);
+                const xgFor = getNumber(['xg_per_match', 'xg_for', 'xg']);
+                const xgAgainst = getNumber(['xga_per_match', 'xg_against', 'xga']);
+                const shots = getNumber(['shots_per90', 'shots', 'shots_total']);
+                const possession = getNumber(['possession_pct', 'possession']);
 
                 let html = '<ul>';
                 if (goalsFor !== null && goalsAgainst !== null) {
@@ -1242,89 +1387,6 @@ async function loadStats() {
 // Charger les classements Ligue 1
 async function loadStandings() {
     try {
-        let fbrefOk = false;
-        try {
-            const fbref = await fetch(cacheBust('data/ligue1_standings.csv'));
-            if (fbref.ok) {
-                const fbText = await fbref.text();
-                const fbRows = parseCSV(fbText);
-                const tbody = document.getElementById('standings-general-tbody');
-                if (tbody && fbRows && fbRows.length > 0) {
-                    const keys = Object.keys(fbRows[0] || {});
-                    const getKey = (cands) => {
-                        for (const k of cands) {
-                            const hit = keys.find(x => x.toLowerCase() === k.toLowerCase());
-                            if (hit) return hit;
-                        }
-                        return null;
-                    };
-                    const kTeam = getKey(['team', 'squad']);
-                    const kMp = getKey(['mp', 'matches', 'played']);
-                    const kPts = getKey(['pts', 'points']);
-                    const kW = getKey(['wins', 'w']);
-                    const kD = getKey(['draws', 'd']);
-                    const kL = getKey(['losses', 'l']);
-                    const kGf = getKey(['gf', 'goals_for']);
-                    const kGa = getKey(['ga', 'goals_against']);
-
-                    const rows = fbRows
-                        .map(r => ({
-                            team: r[kTeam] || '',
-                            mp: parseFloat(r[kMp] || '0') || 0,
-                            pts: parseFloat(r[kPts] || '0') || 0,
-                            w: parseFloat(r[kW] || '0') || 0,
-                            d: parseFloat(r[kD] || '0') || 0,
-                            l: parseFloat(r[kL] || '0') || 0,
-                            gf: parseFloat(r[kGf] || '0') || 0,
-                            ga: parseFloat(r[kGa] || '0') || 0,
-                        }))
-                        .filter(r => r.team);
-
-                    rows.sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        const gdA = a.gf - a.ga;
-                        const gdB = b.gf - b.ga;
-                        if (gdB !== gdA) return gdB - gdA;
-                        return b.gf - a.gf;
-                    });
-
-                    tbody.innerHTML = '';
-                    rows.forEach((team, idx) => {
-                        const tr = document.createElement('tr');
-                        const gd = team.gf - team.ga;
-                        const ppm = team.mp > 0 ? team.pts / team.mp : 0;
-                        const wr = team.mp > 0 ? (team.w / team.mp) * 100 : 0;
-                        const gfpm = team.mp > 0 ? team.gf / team.mp : 0;
-                        const gapm = team.mp > 0 ? team.ga / team.mp : 0;
-                        tr.innerHTML = `
-                            <td class="rank-cell">${idx + 1}</td>
-                            <td class="team-cell"><strong>${team.team}</strong></td>
-                            <td>${team.mp}</td>
-                            <td>${team.w}</td>
-                            <td>${team.d}</td>
-                            <td>${team.l}</td>
-                            <td>${team.gf}</td>
-                            <td>${team.ga}</td>
-                            <td class="${gd >= 0 ? 'positive' : 'negative'}">${gd >= 0 ? '+' : ''}${gd}</td>
-                            <td class="points-cell"><strong>${team.pts}</strong></td>
-                            <td>${ppm.toFixed(2)}</td>
-                            <td>${wr.toFixed(1)}%</td>
-                            <td>${gfpm.toFixed(2)}</td>
-                            <td>${gapm.toFixed(2)}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                    fbrefOk = true;
-                }
-            }
-        } catch (e) {
-            fbrefOk = false;
-        }
-
-        if (fbrefOk) {
-            return;
-        }
-
         const response = await fetch(cacheBust('data/processed/league1_standings_home_away.csv'));
         const text = await response.text();
         const standings = parseCSV(text);
@@ -1562,6 +1624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTeamStyles();
     loadHomeStats();
     loadPreviewMatches();
+    loadPlayers();
 });
 
 // --- Match Analysis Logic ---
@@ -1735,6 +1798,10 @@ function analyzeMatch(opponentName, location, data, simulationData) {
     const oppGf = parseFloat(simMatch.opp_gf || '0');
     const olPpmEngine = parseFloat(simMatch.ol_ppm || '0');
     const oppPpmEngine = parseFloat(simMatch.opp_ppm || '0');
+    const understatXgDiff = parseFloat(simMatch.understat_xg_diff || '0');
+    const understatShotsDiff = parseFloat(simMatch.understat_shots_diff || '0');
+    const understatTiltDiff = parseFloat(simMatch.understat_field_tilt_diff || '0');
+    const similarityScore = parseFloat(simMatch.similarity_score || '0');
     const explanation = simMatch.engine_explanation || '';
 
     const olScore = Math.round(olGf);
@@ -1786,6 +1853,25 @@ function analyzeMatch(opponentName, location, data, simulationData) {
         if (rivalryPenalty > 0.05) {
             factors.push("Contexte de rivalité qui rehausse la difficulté du match.");
         }
+        if (Math.abs(understatXgDiff) > 0.1) {
+            if (understatXgDiff > 0) {
+                factors.push(`Profil offensif Understat supérieur pour l’OL (+${understatXgDiff.toFixed(2)} xG/match par rapport à l’adversaire).`);
+            } else {
+                factors.push(`Profil offensif Understat supérieur pour l’adversaire (${understatXgDiff.toFixed(2)} xG/match par rapport à l’OL).`);
+            }
+        }
+        if (Math.abs(understatTiltDiff) > 0.05) {
+            if (understatTiltDiff > 0) {
+                factors.push("Domination territoriale moyenne à l’avantage de l’OL (field tilt).");
+            } else {
+                factors.push("Domination territoriale moyenne à l’avantage de l’adversaire (field tilt).");
+            }
+        }
+        if (similarityScore > 0.15) {
+            factors.push("Historique positif de l’OL face à des équipes au profil tactique similaire.");
+        } else if (similarityScore < -0.15) {
+            factors.push("Historique plus délicat de l’OL face à des équipes au profil tactique proche.");
+        }
 
         if (!factors.length) {
             factors.push("Aucun facteur dominant unique, équilibre entre plusieurs signaux du moteur.");
@@ -1802,6 +1888,8 @@ function analyzeMatch(opponentName, location, data, simulationData) {
         lines.push(`Différence de forme (PPM OL - adversaire) : ${ppmDiff.toFixed(2)}`);
         lines.push(`Rating global du moteur pour ce duel : ${scoreRaw.toFixed(2)}`);
         lines.push(`PPM utilisés par le moteur · OL : ${olPpmEngine.toFixed(2)} · Adversaire : ${oppPpmEngine.toFixed(2)}`);
+        lines.push(`Différence de profil Understat (xG/match) : ${understatXgDiff.toFixed(2)} · Field tilt : ${understatTiltDiff.toFixed(3)}`);
+        lines.push(`Indice de similarité tactique (historique OL vs profils proches) : ${similarityScore.toFixed(3)}`);
         advancedEl.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
     }
     

@@ -41,6 +41,13 @@ def _load_on_off_impact() -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def _load_combo_summary() -> pd.DataFrame:
+    path = DATA_PROCESSED / "ol_combo_impact_summary.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
+
+
 def _normalize_series(s: pd.Series) -> pd.Series:
     s = s.astype(float)
     if s.empty:
@@ -68,6 +75,7 @@ def build_player_impact_table() -> pd.DataFrame:
     df_rated = _load_players_rated()
     df_keys = _load_key_players()
     df_impact = _load_on_off_impact()
+    df_combo = _load_combo_summary()
 
     df = df_rated.copy()
     df = df.merge(
@@ -81,6 +89,47 @@ def build_player_impact_table() -> pd.DataFrame:
         on="player",
         how="left",
     )
+
+    combo_score = pd.Series(0.0, index=df.index)
+    if not df_combo.empty:
+        combo_rows: list[dict[str, float | str]] = []
+        for _, row in df_combo.iterrows():
+            combo_str = str(row.get("combo", ""))
+            if not combo_str:
+                continue
+            players = [p.strip() for p in combo_str.split("+")]
+            try:
+                matches = float(row.get("matches", 0.0))
+                avg_points = float(row.get("avg_points", 0.0))
+            except Exception:
+                continue
+            for name in players:
+                combo_rows.append(
+                    {
+                        "player": name,
+                        "matches": matches,
+                        "avg_points": avg_points,
+                    }
+                )
+
+        if combo_rows:
+            df_combo_long = pd.DataFrame(combo_rows)
+            df_combo_long["points_weighted"] = (
+                df_combo_long["avg_points"] * df_combo_long["matches"]
+            )
+            df_player_combo = (
+                df_combo_long.groupby("player")
+                .agg(
+                    combo_points=("points_weighted", "sum"),
+                    combo_matches=("matches", "sum"),
+                )
+                .reset_index()
+            )
+            df_player_combo["combo_score_raw"] = (
+                df_player_combo["combo_points"] / df_player_combo["combo_matches"]
+            )
+            combo_map = df_player_combo.set_index("player")["combo_score_raw"]
+            combo_score = df["player"].map(combo_map).fillna(0.0)
 
     df["Playing Time_Min"] = df["Playing Time_Min"].astype(float)
     minutes_norm = _normalize_series(df["Playing Time_Min"])
@@ -97,6 +146,8 @@ def build_player_impact_table() -> pd.DataFrame:
 
     impact_ppm = df.get("impact_ppm", pd.Series(0.0, index=df.index)).astype(float)
     impact_ppm_norm = _normalize_series(impact_ppm)
+
+    combo_score_norm = _normalize_series(combo_score)
 
     attack_score = 0.4 * gls_n + 0.3 * xg_n + 0.3 * xag_n
 
@@ -120,13 +171,17 @@ def build_player_impact_table() -> pd.DataFrame:
 
     minutes_score = minutes_norm
     on_off_score = impact_ppm_norm
+    combo_score_final = combo_score_norm
 
-    w_minutes = 0.2
-    w_attack = 0.25
-    w_defense = 0.25
-    w_onoff = 0.15
-    w_tactical = 0.15
-    total_w = w_minutes + w_attack + w_defense + w_onoff + w_tactical
+    w_minutes = 0.15
+    w_attack = 0.2
+    w_defense = 0.2
+    w_onoff = 0.2
+    w_tactical = 0.1
+    w_combo = 0.15
+    total_w = (
+        w_minutes + w_attack + w_defense + w_onoff + w_tactical + w_combo
+    )
 
     raw_score = (
         w_minutes * minutes_score
@@ -134,6 +189,7 @@ def build_player_impact_table() -> pd.DataFrame:
         + w_defense * defense_score
         + w_onoff * on_off_score
         + w_tactical * tactical_score
+        + w_combo * combo_score_final
     ) / total_w
 
     impact_score = (raw_score * 100.0).clip(0.0, 100.0)
@@ -320,4 +376,3 @@ if __name__ == "__main__":
     out = save_player_impact_table()
     print(f"Table d’impact joueurs sauvegardée dans {out}")
     print(table.head())
-

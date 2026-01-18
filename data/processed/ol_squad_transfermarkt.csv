@@ -1,0 +1,27 @@
+id,name,position,dateOfBirth,age,nationality,currentClub,height,foot,joinedOn,joined,signedFrom,contract,marketValue,status
+316884,Dominik Greif,Goalkeeper,06/04/1997,28,['Slovakia'],,"1,97m",right,18/08/2025,Joined from RCD Mallorca; date: 18/08/2025; fee: €4.00m,RCD Mallorca,30/06/2029,€8.00m,
+282028,Rémy Descamps,Goalkeeper,25/06/1996,29,['France'],,"1,96m",both,23/08/2024,,FC Nantes,30/06/2027,€2.00m,
+1071430,Lassine Diarra,Goalkeeper,11/11/2002,23,['Mali'],,"1,90m",right,,,,30/06/2028,€50k,
+291200,Moussa Niakhaté,Centre-Back,08/03/1996,29,"['Senegal', 'France']",,"1,90m",left,04/07/2024,,Nottingham Forest,30/06/2028,€15.00m,
+187718,Clinton Mata,Centre-Back,07/11/1992,33,"['Angola', 'Belgium']",,"1,80m",right,06/07/2023,,Club Brugge KV,30/06/2028,€3.00m,
+578421,Ruben Kluivert,Centre-Back,21/05/2001,24,"['Netherlands', 'Suriname']",,"1,87m",right,25/07/2025,Joined from Casa Pia AC; date: 25/07/2025; fee: €3.78m,Casa Pia AC,30/06/2030,€2.50m,
+646402,Abner,Left-Back,27/05/2000,25,['Brazil'],,"1,81m",left,05/07/2024,,Real Betis Balompié,30/06/2029,€7.00m,
+131225,Nicolás Tagliafico,Left-Back,31/08/1992,33,"['Argentina', 'Italy']",,"1,71m",left,23/07/2022,,: Ablöse €4.20m,30/06/2027,€5.00m,
+902862,Achraf Laâziri,Left-Back,08/07/2003,22,['Morocco'],,"1,77m",left,01/07/2023,Returned after loan spell with RWDM Brussels; date: 30/06/2025; fee: End of loan,Olympique Lyon B,30/06/2027,€500k,
+285845,Ainsley Maitland-Niles,Right-Back,29/08/1997,28,"['England', 'Jamaica']",,"1,80m",right,07/08/2023,,Arsenal FC,30/06/2027,€10.00m,
+275303,Hans Hateboer,Right-Back,09/01/1994,32,['Netherlands'],,"1,87m",right,17/10/2025,On loan from Stade Rennais FC until 30/06/2026,Stade Rennais FC,30/06/2026,€2.00m,
+618494,Tyler Morton,Defensive Midfield,31/10/2002,23,['England'],,"1,85m",right,05/08/2025,Joined from Liverpool FC; date: 05/08/2025; fee: €10.00m,Liverpool FC,30/06/2030,€18.00m,
+670096,Tanner Tessmann,Defensive Midfield,24/09/2001,24,['United States'],,"1,88m",right,27/08/2024,,Venezia FC,30/06/2029,€12.00m,
+289592,Orel Mangala,Defensive Midfield,18/03/1998,27,"['Belgium', 'DR Congo']",,"1,78m",right,02/07/2024,Returned after loan spell with Everton FC; date: 30/06/2025; fee: End of loan,Nottingham Forest,30/06/2028,€10.00m,
+1004486,Mathys De Carvalho,Defensive Midfield,01/05/2005,20,"['Portugal', 'France']",,"1,83m",right,11/07/2025,Internal transfer: Olympique Lyon B; date: 11/07/2025,Olympique Lyon B,30/06/2028,€4.00m,
+190393,Corentin Tolisso,Central Midfield,03/08/1994,31,"['France', 'Togo']",,"1,81m",right,01/07/2022,,: Ablöse free transfer,30/06/2027,€12.00m,Team captain; Yellow card suspension - until 19/01/2026 - Ligue 1 - 1 matchday
+1187942,Khalis Merah,Central Midfield,24/02/2007,18,"['France', 'Algeria']",,"1,78m",right,01/07/2025,Internal transfer: Olympique Lyon U19; date: 01/07/2025,Olympique Lyon U19,30/06/2029,€8.00m,
+500053,Pavel Sulc,Attacking Midfield,29/12/2000,25,['Czech Republic'],,"1,77m",right,04/08/2025,Joined from FC Viktoria Plzen; date: 04/08/2025; fee: €7.50m,FC Viktoria Plzen,30/06/2029,€12.00m,
+652061,Adam Karabec,Attacking Midfield,02/07/2003,22,['Czech Republic'],,"1,87m",left,12/08/2025,On loan from AC Sparta Prague until 30/06/2026,AC Sparta Prague,30/06/2026,€8.00m,
+743386,Malick Fofana,Left Winger,31/03/2005,20,"['Belgium', 'Guinea']",,"1,69m",right,10/01/2024,,KAA Gent,30/06/2028,€30.00m,Ankle sprain - Return unknown
+952282,Afonso Moreira,Left Winger,19/03/2005,20,['Portugal'],,"1,76m",right,22/07/2025,Joined from Sporting CP B; date: 22/07/2025; fee: €2.00m,Sporting CP B,30/06/2029,€5.00m,
+955070,Ernest Nuamah,Right Winger,01/11/2003,22,['Ghana'],,"1,78m",left,07/07/2024,,: Ablöse €28.50m,30/06/2028,€12.00m,Cruciate ligament tear - Return unknown
+118287,Rachid Ghezzal,Right Winger,09/05/1992,33,"['Algeria', 'France']",,"1,82m",left,05/09/2025,Joined from Without Club; date: 05/09/2025; fee: -,Without Club,30/06/2026,€700k,Adductor pain - Return unknown
+971570,Endrick,Centre-Forward,21/07/2006,19,['Brazil'],,"1,73m",left,01/01/2026,On loan from Real Madrid until 30/06/2026,Real Madrid,30/06/2026,€25.00m,
+1106860,Enzo Molebe,Centre-Forward,18/09/2007,18,"['France', 'DR Congo']",,-,right,,,,30/06/2029,€200k,
+1108478,Alejandro Gomes Rodríguez,Centre-Forward,11/03/2008,17,"['England', 'Venezuela']",,"1,80m",right,,,,30/06/2028,€150k,

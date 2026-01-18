@@ -1,0 +1,54 @@
+=== RECUPERATION CLASSEMENT LIGUE 1 (DOMICILE/EXTERIEUR) ===
+Chargement des donnees depuis data\raw\ligue1_matches_raw.csv (soccerdata)...
+OK - 612 lignes chargees
+
+Calcul du classement...
+AVERTISSEMENT: tableau classement introuvable sur Ligue1.com (HTML sauvegarde dans data\processed\_debug_ligue1.html)
+[INFO] Classement Maxifoot charge (54 equipes, max J=18)
+
+OK - Format long sauvegarde : data\processed\league1_standings_home_away_long.csv
+
+Creation du format large (une ligne par equipe)...
+OK - Format large sauvegarde : data\processed\league1_standings_home_away.csv
+Nombre total d'equipes : 18
+
+TOP 5 CLASSEMENT GENERAL :
+1. Lens - 43 pts (18 matchs, 14V-1N-3D, Diff: +19)
+   Domicile: 21 pts (8 matchs) | Exterieur: 19 pts (9 matchs)
+2. Paris Saint Germain - 42 pts (18 matchs, 13V-3N-2D, Diff: +25)
+   Domicile: 22 pts (8 matchs) | Exterieur: 17 pts (9 matchs)
+3. Marseille - 35 pts (18 matchs, 11V-2N-5D, Diff: +22)
+   Domicile: 20 pts (9 matchs) | Exterieur: 12 pts (8 matchs)
+4. Lille - 32 pts (18 matchs, 10V-2N-6D, Diff: +8)
+   Domicile: 19 pts (9 matchs) | Exterieur: 13 pts (8 matchs)
+5. Lyon - 30 pts (17 matchs, 9V-3N-5D, Diff: +8)
+   Domicile: 18 pts (8 matchs) | Exterieur: 12 pts (9 matchs)
+
+=== SCRIPT TERMINE AVEC SUCCES ===
+=== RECUPERATION CLASSEMENT LIGUE 1 (DOMICILE/EXTERIEUR) ===
+Chargement des donnees depuis data\raw\ligue1_matches_raw.csv (soccerdata)...
+OK - 612 lignes chargees
+
+Calcul du classement...
+AVERTISSEMENT: tableau classement introuvable sur Ligue1.com (HTML sauvegarde dans data\processed\_debug_ligue1.html)
+[INFO] Classement Maxifoot charge (54 equipes, max J=18)
+
+OK - Format long sauvegarde : data\processed\league1_standings_home_away_long.csv
+
+Creation du format large (une ligne par equipe)...
+OK - Format large sauvegarde : data\processed\league1_standings_home_away.csv
+Nombre total d'equipes : 18
+
+TOP 5 CLASSEMENT GENERAL :
+1. Lens - 43 pts (18 matchs, 14V-1N-3D, Diff: +19)
+   Domicile: 21 pts (8 matchs) | Exterieur: 19 pts (9 matchs)
+2. Paris Saint Germain - 42 pts (18 matchs, 13V-3N-2D, Diff: +25)
+   Domicile: 22 pts (8 matchs) | Exterieur: 17 pts (9 matchs)
+3. Marseille - 35 pts (18 matchs, 11V-2N-5D, Diff: +22)
+   Domicile: 20 pts (9 matchs) | Exterieur: 12 pts (8 matchs)
+4. Lille - 32 pts (18 matchs, 10V-2N-6D, Diff: +8)
+   Domicile: 19 pts (9 matchs) | Exterieur: 13 pts (8 matchs)
+5. Lyon - 30 pts (17 matchs, 9V-3N-5D, Diff: +8)
+   Domicile: 18 pts (8 matchs) | Exterieur: 12 pts (9 matchs)
+
+=== SCRIPT TERMINE AVEC SUCCES ===

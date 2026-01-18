@@ -1,17 +1,26 @@
 player_id,name,pos,minutes_played,impact_score,impact_category
-Pavel Šulc,Pavel Šulc,"FW,MF",887.0,58.3,titulaire
-Afonso Moreira,Afonso Moreira,FW,655.0,42.6,rotation
-Malick Fofana,Malick Fofana,FW,721.0,42.3,rotation
-Corentin Tolisso,Corentin Tolisso,MF,1396.0,62.2,titulaire
-Ainsley Maitland-Niles,Ainsley Maitland-Niles,"DF,FW",1306.0,51.3,titulaire
-Martin Satriano,Martin Satriano,FW,692.0,18.9,faible_impact
-Adam Karabec,Adam Karabec,FW,768.0,22.9,faible_impact
-Abner,Abner,DF,890.0,37.0,rotation
-Nicolás Tagliafico,Nicolás Tagliafico,DF,889.0,32.4,rotation
-Tyler Morton,Tyler Morton,MF,1314.0,45.7,rotation
-Tanner Tessmann,Tanner Tessmann,"MF,DF",1063.0,35.9,rotation
-Moussa Niakhate,Moussa Niakhate,DF,1364.0,42.4,rotation
-Khalis Merah,Khalis Merah,"MF,FW",582.0,14.8,faible_impact
-Dominik Greif,Dominik Greif,GK,1170.0,21.3,faible_impact
-Clinton Mata,Clinton Mata,DF,1393.0,27.2,faible_impact
-Rémy Descamps,Rémy Descamps,GK,360.0,0.0,faible_impact
+Pavel Šulc,Pavel Šulc,"FW,MF",887.0,52.7,titulaire
+Afonso Moreira,Afonso Moreira,FW,655.0,50.9,titulaire
+Corentin Tolisso,Corentin Tolisso,MF,1396.0,71.5,titulaire_clé
+Ainsley Maitland-Niles,Ainsley Maitland-Niles,"DF,FW",1306.0,68.8,titulaire_clé
+Malick Fofana,Malick Fofana,FW,721.0,54.1,titulaire
+Tanner Tessmann,Tanner Tessmann,"MF,DF",1063.0,47.9,rotation
+Moussa Niakhate,Moussa Niakhate,DF,1364.0,62.0,titulaire
+Abner,Abner,DF,890.0,52.0,titulaire
+Tyler Morton,Tyler Morton,MF,1314.0,61.0,titulaire
+Nicolás Tagliafico,Nicolás Tagliafico,DF,889.0,48.7,rotation
+Georges Mikautadze,Georges Mikautadze,FW,179.0,23.7,faible_impact
+Martin Satriano,Martin Satriano,FW,692.0,46.5,rotation
+Adam Karabec,Adam Karabec,FW,768.0,39.8,rotation
+Clinton Mata,Clinton Mata,DF,1393.0,55.1,titulaire
+Hans Hateboer,Hans Hateboer,DF,224.0,31.4,rotation
+Khalis Merah,Khalis Merah,"MF,FW",582.0,30.4,rotation
+Dominik Greif,Dominik Greif,GK,1170.0,41.4,rotation
+Ruben Kluivert,Ruben Kluivert,DF,288.0,38.2,rotation
+Mathys De Carvalho,Mathys De Carvalho,MF,271.0,26.8,faible_impact
+Sael Kumbedi,Sael Kumbedi,DF,65.0,8.2,faible_impact
+Adil Hamdani,Adil Hamdani,FW,6.0,15.6,faible_impact
+Orel Mangala,Orel Mangala,MF,16.0,8.5,faible_impact
+Rémy Descamps,Rémy Descamps,GK,360.0,21.4,faible_impact
+Rachid Ghezzal,Rachid Ghezzal,FW,142.0,20.7,faible_impact
+Enzo Molebe,Enzo Molebe,FW,10.0,6.1,faible_impact

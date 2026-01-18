@@ -37,10 +37,21 @@ players["team"] = players["team"].str.lower().str.strip()
 
 players["match_key"] = players["game_date"].astype(str) + "_" + players["team"]
 
-players_out = players[[
-    "match_key", "player", "pos", "age",
-    "minutes_played", "goals", "assists", "xg", "xag"
-]]
+cols_players = [
+    "match_key",
+    "player",
+    "pos",
+    "age",
+    "minutes_played",
+    "goals",
+    "assists",
+    "xg",
+    "xag",
+]
+if "pos_fr" in players.columns:
+    cols_players.append("pos_fr")
+
+players_out = players[cols_players]
 
 players_out.to_csv(
     "data/processed/ol_players_with_match_key.csv",

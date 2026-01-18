@@ -477,6 +477,139 @@ def run_scripts(scripts: Sequence[str]) -> None:
             log(f"[AVERTISSEMENT] Script échoué (continuation): {script}")
 
 
+def run_external_stats(do_scrape: bool) -> None:
+    if not do_scrape:
+        return
+    base_dir = Path("data") / "processed"
+    advanced_path = base_dir / "ligue1_team_advanced_stats.csv"
+    scripts_understat = ["scripts/scrape_understat_ligue1.py"]
+    scripts_fbref = ["scripts/scrape_fbref_ligue1.py"]
+    run_scripts(scripts_understat)
+    df_adv = safe_read_csv(advanced_path)
+    if df_adv.empty:
+        log("[INFO] Understat indisponible, fallback avancé FBref")
+        run_scripts(scripts_fbref)
+    else:
+        log("[INFO] Statistiques avancées mises à jour via Understat")
+
+
+def validate_core_processed_data() -> None:
+    base_dir = Path("data") / "processed"
+    issues: List[str] = []
+
+    def require_csv(filename: str, required_cols: Sequence[str], min_rows: int) -> pd.DataFrame:
+        path = base_dir / filename
+        if not path.exists():
+            issues.append(f"{filename}: fichier introuvable")
+            return pd.DataFrame()
+        try:
+            df = pd.read_csv(path)
+        except Exception as exc:
+            issues.append(f"{filename}: lecture échouée ({exc})")
+            return pd.DataFrame()
+        if df.empty or len(df) < min_rows:
+            issues.append(f"{filename}: données insuffisantes ({len(df)} lignes)")
+        missing = [c for c in required_cols if c not in df.columns]
+        if missing:
+            issues.append(f"{filename}: colonnes manquantes {missing}")
+        return df
+
+    players_rated = require_csv(
+        "ol_players_rated.csv",
+        [
+            "league",
+            "season",
+            "player",
+            "pos",
+            "Playing Time_Min",
+            "rating",
+        ],
+        11,
+    )
+    player_minutes = require_csv(
+        "ol_player_minutes.csv",
+        ["season", "game", "game_id", "team", "player", "minutes_played"],
+        11,
+    )
+    impact_scores = require_csv(
+        "ol_player_impact_scores.csv",
+        ["name", "minutes_played", "impact_score"],
+        11,
+    )
+    require_csv(
+        "ol_key_players.csv",
+        ["player", "pos", "Playing Time_Min", "rating", "importance"],
+        11,
+    )
+    require_csv(
+        "ol_match_score_final.csv",
+        ["date", "opponent", "result", "points", "match_rating", "score_final"],
+        10,
+    )
+    require_csv(
+        "ol_lineup_impact_summary.csv",
+        ["combo", "size", "matches", "avg_points"],
+        1,
+    )
+    require_csv(
+        "ol_combo_impact_summary.csv",
+        ["combo", "size", "matches", "avg_points"],
+        1,
+    )
+    require_csv(
+        "league1_standings.csv",
+        ["team", "points", "matches", "points_per_match", "rank"],
+        18,
+    )
+    require_csv(
+        "league1_standings_home_away.csv",
+        ["team", "matches", "home_matches", "away_matches"],
+        18,
+    )
+    require_csv(
+        "league1_understat_team_profiles.csv",
+        ["season", "team", "xg_per_match", "xga_per_match"],
+        10,
+    )
+    require_csv(
+        "league1_understat_team_similarity.csv",
+        ["team", "similar_team", "rank", "distance"],
+        10,
+    )
+    require_csv(
+        "ol_match_proba_dataset.csv",
+        ["match_key", "date", "opponent", "venue", "result_points"],
+        10,
+    )
+    require_csv(
+        "ol_next_match_simulation.csv",
+        ["opponent", "venue", "proba_win", "proba_draw", "proba_loss", "engine_explanation"],
+        10,
+    )
+
+    if not player_minutes.empty and not impact_scores.empty:
+        minutes_players = set(
+            player_minutes.loc[
+                player_minutes["team"]
+                .astype(str)
+                .str.contains("Lyon", case=False, na=False),
+                "player",
+            ].astype(str)
+        )
+        impact_players = set(impact_scores["name"].astype(str))
+        missing_players = sorted(p for p in minutes_players if p not in impact_players)
+        if missing_players:
+            issues.append(
+                "ol_player_impact_scores.csv: joueurs manquants par rapport à "
+                "ol_player_minutes.csv: "
+                + ", ".join(missing_players)
+            )
+
+    if issues:
+        details = "\n".join(issues)
+        raise RuntimeError(f"Validation data/processed échouée:\n{details}")
+
+
 def run_git_pipeline() -> None:
     log("\n=== GIT: PREPARATION DU DEPOT ===")
 
@@ -687,7 +820,9 @@ def main() -> None:
     print_summary(results)
 
     try:
+        run_external_stats(do_scrape)
         scripts_analysis = [
+            "scraping/matches.py",
             "analysis/clean_matches.py",
             "analysis/match_rating.py",
             "analysis/match_score_final.py",
@@ -701,27 +836,37 @@ def main() -> None:
             "analysis/stepA_create_league1_standings.py",
             "scraping/get_league1_standings_home_away.py",
             "scraping/ol_injuries_transfermarkt.py",
+            "scraping/ol_transfers_transfermarkt.py",
+            "scraping/ol_mercato_lequipe.py",
+            "scraping/ol_news_footmercato.py",
+            "scraping/ol_squad_transfermarkt.py",
             "analysis/absence_impact.py",
+            "analysis/understat_team_similarity.py",
+            "analysis/player_rating.py",
+            "analysis/player_impact_engine.py",
+            "analysis/player_match_impact.py",
+            "analysis/team_rating_from_players.py",
+            "analysis/key_players.py",
+            "analysis/build_match_proba_dataset.py",
+            "analysis/match_squad_availability.py",
+            "analysis/match_win_probability.py",
         ]
-        scripts_scraping_soccerdata = [
-            "scraping/soccerdata_ligue1.py",
+        scripts_soccerdata_minutes = [
             "scraping/soccerdata_player_minutes_ol.py",
         ]
-        new_matches_for_soccerdata = False
-        if do_scrape and schedule_url:
-            if detect_new_matches(session, schedule_url):
-                new_matches_for_soccerdata = True
-            else:
-                log("[INFO] Scraping soccerdata ignoré: aucun nouveau match détecté")
-        elif do_scrape and not schedule_url:
-            log("[INFO] Scraping soccerdata ignoré: URL calendrier indisponible")
-        if do_scrape and new_matches_for_soccerdata:
-            run_scripts(scripts_scraping_soccerdata)
+        scripts_soccerdata_matches_and_squads = [
+            "scraping/soccerdata_ligue1.py",
+            "scraping/soccerdata_players_ol.py",
+        ]
+        if do_scrape:
+            run_scripts(scripts_soccerdata_minutes)
+            run_scripts(scripts_soccerdata_matches_and_squads)
         run_scripts(scripts_analysis)
     except Exception as exc:
         log(f"[AVERTISSEMENT] Etape analyse interrompue: {exc}")
-        # Pas d'arrêt: le pipeline ne doit pas crasher
         pass
+
+    validate_core_processed_data()
 
     try:
         run_git_pipeline()

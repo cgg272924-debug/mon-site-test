@@ -329,7 +329,48 @@
         <section id="players" class="section-content">
             <div class="container">
                 <h2 class="section-title">Joueurs Clés</h2>
-                <div id="players-react-root"></div>
+                <div class="card-bg p-4 rounded-xl mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="players-filter-role" class="block text-sm font-medium text-gray-300 mb-1">Filtrer par poste</label>
+                        <select id="players-filter-role" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="all">Tous les postes</option>
+                            <option value="gardien">Gardiens</option>
+                            <option value="défenseur">Défenseurs</option>
+                            <option value="milieu">Milieux</option>
+                            <option value="offensif">Offensifs</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="players-filter-minutes" class="block text-sm font-medium text-gray-300 mb-1">Minutes minimum jouées</label>
+                        <select id="players-filter-minutes" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="0">Toutes les minutes</option>
+                            <option value="300">≥ 300 minutes</option>
+                            <option value="600">≥ 600 minutes</option>
+                            <option value="900">≥ 900 minutes</option>
+                            <option value="1200">≥ 1200 minutes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="players-table" class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Joueur</th>
+                                <th>Poste</th>
+                                <th>Minutes</th>
+                                <th>Note</th>
+                                <th>Importance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="players-tbody">
+                            <tr>
+                                <td colspan="5" class="loading">
+                                    Chargement des joueurs...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -384,6 +425,9 @@
                                 <p class="text-gray-400" id="opponent-rank">Loading...</p>
                             </div>
                         </div>
+                        <p id="analysis-type-badge" class="mt-4 text-sm text-gray-300">
+                            Type d'analyse : en attente de sélection de match.
+                        </p>
                     </div>
 
                     <!-- Cartes de stats -->
@@ -493,6 +537,13 @@
                                     <div id="engine-advanced-stats" class="text-sm text-slate-300 space-y-1">
                                         <div>xG attendu, impact des absences et rating global seront affichés ici.</div>
                                     </div>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-100 mb-2">Groupe & absences</h4>
+                                    <p id="analysis-absences-summary" class="text-sm text-slate-300">
+                                        En attente d’informations de groupe ou de blessures.
+                                    </p>
+                                    <div id="analysis-absent-players" class="mt-2 flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -1441,13 +1492,10 @@
             );
         }
 
-        function PlayersReactTable() {
+        function PlayersSimpleReactTable() {
             const { loading, error, rows } = useCsvData(
                 'data/processed/ol_key_players.csv'
             );
-            const [minMinutes, setMinMinutes] = useState(0);
-            const [positionFilter, setPositionFilter] = useState('all');
-            const [sortBy, setSortBy] = useState('importance_desc');
 
             if (loading) {
                 return (
@@ -1467,22 +1515,134 @@
                 );
             }
 
-            const players = (rows || []).map(p => ({
-                name: p.player,
-                pos: p.pos,
-                minutes: parseInt(p['Playing Time_Min'] || '0', 10) || 0,
-                rating: parseFloat(p.rating || '0') || 0,
-                importance: parseFloat(p.importance || '0') || 0,
-                gls90: parseFloat(p['Per 90 Minutes_Gls'] || '0') || 0,
-                ast90: parseFloat(p['Per 90 Minutes_Ast'] || '0') || 0,
-                xg90: parseFloat(p['Per 90 Minutes_xG'] || '0') || 0,
-                xag90: parseFloat(p['Per 90 Minutes_xAG'] || '0') || 0,
-                prgC: parseFloat(p['Progression_PrgC'] || '0') || 0,
-                prgP: parseFloat(p['Progression_PrgP'] || '0') || 0,
-                prgR: parseFloat(p['Progression_PrgR'] || '0') || 0,
-                cardsY: parseFloat(p['Performance_CrdY'] || '0') || 0,
-                cardsR: parseFloat(p['Performance_CrdR'] || '0') || 0
-            }));
+            if (!rows || rows.length === 0) {
+                return (
+                    <div className="table-container">
+                        <div className="error">
+                            Aucune donnée trouvée dans data/processed/ol_key_players.csv
+                        </div>
+                    </div>
+                );
+            }
+
+            const players = (rows || [])
+                .map(p => ({
+                    name: p.player,
+                    pos: p.pos,
+                    minutes: parseInt(p['Playing Time_Min'] || '0', 10) || 0,
+                    rating: parseFloat(p.rating || '0') || 0,
+                    importance: parseFloat(p.importance || '0') || 0
+                }))
+                .filter(p => p.name);
+
+            players.sort(
+                (a, b) =>
+                    b.importance - a.importance
+            );
+
+            return (
+                <div className="table-container">
+                    <table className="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Joueur</th>
+                                <th>Poste</th>
+                                <th>Minutes</th>
+                                <th>Note</th>
+                                <th>Importance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {players.map(player => (
+                                <tr key={player.name}>
+                                    <td>{player.name}</td>
+                                    <td>{player.pos || ''}</td>
+                                    <td>
+                                        {player.minutes.toLocaleString('fr-FR')}
+                                    </td>
+                                    <td>{player.rating.toFixed(1)}</td>
+                                    <td>{player.importance.toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        function PlayersReactTable() {
+            const { loading, error, rows } = useCsvData(
+                'data/processed/ol_key_players.csv'
+            );
+            const {
+                loading: minutesLoading,
+                error: minutesError,
+                rows: minutesRows
+            } = useCsvData('data/processed/ol_player_minutes.csv');
+            const {
+                rows: impactMatchRows
+            } = useCsvData('data/processed/ol_player_match_impact.csv');
+            const {
+                rows: absenceImpactRows
+            } = useCsvData('data/processed/ol_absence_impact.csv');
+            const {
+                rows: impactScoreRows
+            } = useCsvData('data/processed/ol_player_impact_scores.csv');
+            const {
+                rows: comboImpactRows
+            } = useCsvData('data/processed/ol_combo_impact_summary.csv');
+            const [minMinutes, setMinMinutes] = useState(0);
+            const [positionFilter, setPositionFilter] = useState('all');
+            const [sortBy, setSortBy] = useState('importance_desc');
+            const [selectedPlayerName, setSelectedPlayerName] = useState('');
+
+            if (loading || minutesLoading) {
+                return (
+                    <div className="table-container">
+                        <div className="loading">Chargement des joueurs...</div>
+                    </div>
+                );
+            }
+
+            if (!rows || rows.length === 0) {
+                return <PlayersSimpleReactTable />;
+            }
+
+            if (!minutesRows || minutesRows.length === 0) {
+                console.error(
+                    'CSV vide ou non chargé',
+                    'data/processed/ol_player_minutes.csv',
+                    minutesRows
+                );
+            }
+
+            let players = [];
+            try {
+                players = (rows || []).map(p => ({
+                    name: p.player,
+                    pos: p.pos,
+                    minutes: parseInt(p['Playing Time_Min'] || '0', 10) || 0,
+                    rating: parseFloat(p.rating || '0') || 0,
+                    importance: parseFloat(p.importance || '0') || 0,
+                    gls90: parseFloat(p['Per 90 Minutes_Gls'] || '0') || 0,
+                    ast90: parseFloat(p['Per 90 Minutes_Ast'] || '0') || 0,
+                    xg90: parseFloat(p['Per 90 Minutes_xG'] || '0') || 0,
+                    xag90: parseFloat(p['Per 90 Minutes_xAG'] || '0') || 0,
+                    prgC: parseFloat(p['Progression_PrgC'] || '0') || 0,
+                    prgP: parseFloat(p['Progression_PrgP'] || '0') || 0,
+                    prgR: parseFloat(p['Progression_PrgR'] || '0') || 0,
+                    cardsY: parseFloat(p['Performance_CrdY'] || '0') || 0,
+                    cardsR: parseFloat(p['Performance_CrdR'] || '0') || 0,
+                    goals: parseInt(p['Performance_Gls'] || '0', 10) || 0,
+                    assists: parseInt(p['Performance_Ast'] || '0', 10) || 0
+                }));
+            } catch (e) {
+                return <PlayersSimpleReactTable />;
+            }
+
+            if (!players || players.length === 0) {
+                return <PlayersSimpleReactTable />;
+            }
 
             const distinctPositions = Array.from(
                 new Set(
@@ -1493,6 +1653,17 @@
                         .filter(Boolean)
                 )
             );
+
+            useEffect(() => {
+                if (!selectedPlayerName && players.length > 0) {
+                    const defaultPlayer = players
+                        .slice()
+                        .sort((a, b) => b.importance - a.importance)[0];
+                    if (defaultPlayer) {
+                        setSelectedPlayerName(defaultPlayer.name);
+                    }
+                }
+            }, [selectedPlayerName, players]);
 
             let filtered = players.filter(p => p.name);
 
@@ -1519,33 +1690,600 @@
                 0
             );
 
-            const handleRowClick = player => {
-                const content = `
-                    <div class="player-details">
-                        <h3>Détails du Joueur</h3>
-                        <p><strong>Nom:</strong> ${player.name || ''}</p>
-                        <p><strong>Position:</strong> ${player.pos || ''}</p>
-                        <p><strong>Temps de Jeu:</strong> ${player.minutes.toLocaleString('fr-FR')} minutes</p>
-                        <p><strong>Note:</strong> ${player.rating.toFixed(1)}</p>
-                        <p><strong>Importance:</strong> ${player.importance.toFixed(2)}</p>
-                        <hr>
-                        <h4>Pourquoi cette note ?</h4>
-                        <ul>
-                            <li><strong>Production offensive (par 90):</strong> buts ${player.gls90.toFixed(2)}, passes ${player.ast90.toFixed(2)}</li>
-                            <li><strong>Qualité des occasions (par 90):</strong> xG ${player.xg90.toFixed(2)}, xAG ${player.xag90.toFixed(2)}</li>
-                            <li><strong>Progression du ballon:</strong> PrgC ${player.prgC.toFixed(0)}, PrgP ${player.prgP.toFixed(0)}, PrgR ${player.prgR.toFixed(0)}</li>
-                            <li><strong>Discipline:</strong> jaunes ${player.cardsY.toFixed(0)}, rouges ${player.cardsR.toFixed(0)}</li>
-                        </ul>
-                        <p class="text-sm text-slate-500">
-                            L'importance combine la note et le temps de jeu pour refléter la contribution réelle sur la saison.
+            const selectedPlayer = players.find(p => p.name === selectedPlayerName) || null;
+
+            const playerMinutesSeries = (() => {
+                if (!selectedPlayer || !minutesRows || minutesRows.length === 0) {
+                    return [];
+                }
+                const rowsForPlayer = minutesRows.filter(
+                    r =>
+                        (r.player || '') === selectedPlayer.name &&
+                        String(r.team || '').toLowerCase().includes('lyon')
+                );
+                return rowsForPlayer.map(r => ({
+                    label: r.game || '',
+                    minutes: parseInt(r.minutes_played || '0', 10) || 0,
+                    goals: parseInt(r.goals || '0', 10) || 0,
+                    assists: parseInt(r.assists || '0', 10) || 0,
+                    xg: parseFloat(r.xg || '0') || 0,
+                    xag: parseFloat(r.xag || '0') || 0
+                }));
+            })();
+
+            const maxSeriesMinutes = playerMinutesSeries.reduce(
+                (max, r) => (r.minutes > max ? r.minutes : max),
+                0
+            );
+
+            const maxGls90 = players.reduce(
+                (max, p) => (p.gls90 > max ? p.gls90 : max),
+                0.1
+            );
+            const maxAst90 = players.reduce(
+                (max, p) => (p.ast90 > max ? p.ast90 : max),
+                0.1
+            );
+            const maxXg90 = players.reduce(
+                (max, p) => (p.xg90 > max ? p.xg90 : max),
+                0.1
+            );
+            const maxXag90 = players.reduce(
+                (max, p) => (p.xag90 > max ? p.xag90 : max),
+                0.1
+            );
+            const maxPrgC = players.reduce(
+                (max, p) => (p.prgC > max ? p.prgC : max),
+                1
+            );
+            const maxPrgP = players.reduce(
+                (max, p) => (p.prgP > max ? p.prgP : max),
+                1
+            );
+            const maxPrgR = players.reduce(
+                (max, p) => (p.prgR > max ? p.prgR : max),
+                1
+            );
+
+            const getPositionGroup = pos => {
+                const value = pos || '';
+                if (value.includes('GK')) return 'GK';
+                if (value.includes('DF')) return 'DF';
+                if (value.includes('MF')) return 'MF';
+                return 'FW';
+            };
+
+            const buildPositionMetrics = player => {
+                const group = getPositionGroup(player.pos || '');
+                if (group === 'FW') {
+                    return [
+                        {
+                            icon: '📈',
+                            label: 'xG/90',
+                            value: player.xg90,
+                            decimals: 2
+                        },
+                        {
+                            icon: '📊',
+                            label: 'xAG/90',
+                            value: player.xag90,
+                            decimals: 2
+                        }
+                    ];
+                }
+                if (group === 'MF') {
+                    return [
+                        {
+                            icon: '🎯',
+                            label: 'Passes D./90',
+                            value: player.ast90,
+                            decimals: 2
+                        },
+                        {
+                            icon: '🔄',
+                            label: 'PrgP',
+                            value: player.prgP
+                        }
+                    ];
+                }
+                if (group === 'DF') {
+                    return [
+                        {
+                            icon: '🛡️',
+                            label: 'PrgC',
+                            value: player.prgC
+                        },
+                        {
+                            icon: '🚫',
+                            label: 'Cartons',
+                            value: player.cardsY + player.cardsR
+                        }
+                    ];
+                }
+                return [
+                    {
+                        icon: '🧤',
+                        label: 'Minutes',
+                        value: player.minutes
+                    },
+                    {
+                        icon: '⭐',
+                        label: 'Note',
+                        value: player.rating,
+                        decimals: 1
+                    }
+                ];
+            };
+
+            const teamAvgRating =
+                players.length > 0
+                    ? players.reduce((acc, p) => acc + p.rating, 0) / players.length
+                    : 0;
+            const teamAvgXg90 =
+                players.length > 0
+                    ? players.reduce((acc, p) => acc + p.xg90, 0) / players.length
+                    : 0;
+            const teamAvgXag90 =
+                players.length > 0
+                    ? players.reduce((acc, p) => acc + p.xag90, 0) / players.length
+                    : 0;
+            const teamAvgGls90 =
+                players.length > 0
+                    ? players.reduce((acc, p) => acc + p.gls90, 0) / players.length
+                    : 0;
+
+            const renderRadar = player => {
+                if (!player) return null;
+                const metrics = [
+                    {
+                        label: 'Buts/90',
+                        value: player.gls90,
+                        max: maxGls90
+                    },
+                    {
+                        label: 'Passes D./90',
+                        value: player.ast90,
+                        max: maxAst90
+                    },
+                    {
+                        label: 'xG/90',
+                        value: player.xg90,
+                        max: maxXg90
+                    },
+                    {
+                        label: 'xAG/90',
+                        value: player.xag90,
+                        max: maxXag90
+                    },
+                    {
+                        label: 'PrgP',
+                        value: player.prgP,
+                        max: maxPrgP
+                    },
+                    {
+                        label: 'PrgC',
+                        value: player.prgC,
+                        max: maxPrgC
+                    },
+                    {
+                        label: 'PrgR',
+                        value: player.prgR,
+                        max: maxPrgR
+                    }
+                ];
+                const cx = 80;
+                const cy = 80;
+                const baseRadius = 15;
+                const maxRadius = 60;
+                const angleStep = (2 * Math.PI) / metrics.length;
+                const points = metrics
+                    .map((m, index) => {
+                        const ratio = m.max > 0 ? Math.min(m.value / m.max, 1) : 0;
+                        const radius = baseRadius + ratio * (maxRadius - baseRadius);
+                        const angle = Math.PI / 2 - index * angleStep;
+                        const x = cx + radius * Math.cos(angle);
+                        const y = cy - radius * Math.sin(angle);
+                        return `${x},${y}`;
+                    })
+                    .join(' ');
+
+                return (
+                    <div className="rounded-xl bg-slate-900/70 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-2">
+                            Profil radar
                         </p>
+                        <div className="flex items-center gap-4">
+                            <svg width="160" height="160">
+                                <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={maxRadius}
+                                    fill="none"
+                                    stroke="#1f2937"
+                                />
+                                <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={(maxRadius + baseRadius) / 2}
+                                    fill="none"
+                                    stroke="#111827"
+                                />
+                                <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={baseRadius}
+                                    fill="none"
+                                    stroke="#111827"
+                                />
+                                {metrics.map((m, index) => {
+                                    const angle = Math.PI / 2 - index * angleStep;
+                                    const x = cx + maxRadius * Math.cos(angle);
+                                    const y = cy - maxRadius * Math.sin(angle);
+                                    return (
+                                        <g key={m.label}>
+                                            <line
+                                                x1={cx}
+                                                y1={cy}
+                                                x2={x}
+                                                y2={y}
+                                                stroke="#1f2937"
+                                            />
+                                        </g>
+                                    );
+                                })}
+                                <polygon
+                                    points={points}
+                                    fill="rgba(56, 189, 248, 0.35)"
+                                    stroke="#38bdf8"
+                                    strokeWidth="1.5"
+                                />
+                            </svg>
+                            <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                                {metrics.map(m => {
+                                    const ratio = m.max > 0 ? Math.min(m.value / m.max, 1) : 0;
+                                    return (
+                                        <div
+                                            key={m.label}
+                                            className="flex flex-col gap-1"
+                                        >
+                                            <span className="text-slate-400">
+                                                {m.label}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+                                                    <div
+                                                        className="h-full rounded-full bg-sky-500"
+                                                        style={{
+                                                            width: `${ratio * 100}%`
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="tabular-nums text-slate-200">
+                                                    {m.value.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
-                `;
-                createModal(`Joueur: ${player.name || ''}`, content);
+                );
+            };
+
+            const handleRowClick = player => {
+                setSelectedPlayerName(player.name);
+                const anchor = document.getElementById('player-detail-anchor');
+                if (anchor && typeof anchor.scrollIntoView === 'function') {
+                    anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             };
 
             return (
                 <div className="space-y-4">
+                    <div id="player-detail-anchor"></div>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-3 rounded-xl bg-slate-900/70 p-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                    Vue joueur
+                                </p>
+                                <span className="text-xs text-slate-500">
+                                    Données saison complètes
+                                </span>
+                            </div>
+                            <select
+                                className="mt-2 w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                                value={selectedPlayerName}
+                                onChange={e => setSelectedPlayerName(e.target.value)}
+                            >
+                                <option value="">Sélectionner un joueur</option>
+                                {players
+                                    .slice()
+                                    .sort((a, b) => b.importance - a.importance)
+                                    .map(p => (
+                                        <option key={p.name} value={p.name}>
+                                            {p.name}
+                                        </option>
+                                    ))}
+                            </select>
+                            {selectedPlayer && (
+                                <div className="mt-3 space-y-2 rounded-lg bg-slate-900/80 p-3 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-semibold">
+                                                {selectedPlayer.name}
+                                            </p>
+                                            <p className="text-xs text-slate-400">
+                                                {selectedPlayer.pos || 'Poste inconnu'}
+                                            </p>
+                                        </div>
+                                        <div className="text-right text-xs text-slate-300">
+                                            <p>
+                                                Minutes:{' '}
+                                                {selectedPlayer.minutes.toLocaleString(
+                                                    'fr-FR'
+                                                )}
+                                            </p>
+                                            <p>Note: {selectedPlayer.rating.toFixed(1)}</p>
+                                            <p>
+                                                Impact:{' '}
+                                                {selectedPlayer.importance.toFixed(1)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                                        <div>
+                                            <p className="text-slate-400">Buts/90</p>
+                                            <p className="font-semibold">
+                                                {selectedPlayer.gls90.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">Passes D./90</p>
+                                            <p className="font-semibold">
+                                                {selectedPlayer.ast90.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">xG/90</p>
+                                            <p className="font-semibold">
+                                                {selectedPlayer.xg90.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">xAG/90</p>
+                                            <p className="font-semibold">
+                                                {selectedPlayer.xag90.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 space-y-2 text-[11px] text-slate-300">
+                                        <div className="rounded-md bg-slate-900/60 p-2">
+                                            <p className="text-slate-400">
+                                                Comparaison avec la moyenne de l'équipe
+                                            </p>
+                                            <div className="mt-1 grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <p className="text-slate-400">Note</p>
+                                                    <p className="tabular-nums">
+                                                        {selectedPlayer.rating.toFixed(2)} vs{' '}
+                                                        {teamAvgRating.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-slate-400">Buts/90</p>
+                                                    <p className="tabular-nums">
+                                                        {selectedPlayer.gls90.toFixed(2)} vs{' '}
+                                                        {teamAvgGls90.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-slate-400">xG/90</p>
+                                                    <p className="tabular-nums">
+                                                        {selectedPlayer.xg90.toFixed(2)} vs{' '}
+                                                        {teamAvgXg90.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-slate-400">xAG/90</p>
+                                                    <p className="tabular-nums">
+                                                        {selectedPlayer.xag90.toFixed(2)} vs{' '}
+                                                        {teamAvgXag90.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="rounded-md bg-slate-900/60 p-2">
+                                            <p className="text-slate-400">
+                                                Impact algorithme et combos
+                                            </p>
+                                            {(() => {
+                                                const name = selectedPlayer.name || '';
+                                                const impactMatch =
+                                                    (impactMatchRows || []).find(
+                                                        r =>
+                                                            (r.player || '') === name
+                                                    ) || null;
+                                                const absenceImpact =
+                                                    (absenceImpactRows || []).find(
+                                                        r =>
+                                                            (r.player || '') === name
+                                                    ) || null;
+                                                const impactScore =
+                                                    (impactScoreRows || []).find(
+                                                        r =>
+                                                            (r.name || '') === name
+                                                    ) || null;
+                                                const combos =
+                                                    (comboImpactRows || [])
+                                                        .filter(r =>
+                                                            String(r.combo || '').includes(
+                                                                name
+                                                            )
+                                                        )
+                                                        .slice(0, 3);
+                                                return (
+                                                    <div className="mt-1 space-y-1">
+                                                        {impactScore && (
+                                                            <p>
+                                                                Score impact global:{' '}
+                                                                <span className="tabular-nums">
+                                                                    {parseFloat(
+                                                                        impactScore.impact_score ||
+                                                                            '0'
+                                                                    ).toFixed(1)}
+                                                                </span>{' '}
+                                                                (
+                                                                {impactScore.impact_category ||
+                                                                    ''}
+                                                                )
+                                                            </p>
+                                                        )}
+                                                        {impactMatch && (
+                                                            <p>
+                                                                Points/match:{' '}
+                                                                {parseFloat(
+                                                                    impactMatch.points_per_match_with ||
+                                                                        '0'
+                                                                ).toFixed(2)}{' '}
+                                                                avec vs{' '}
+                                                                {parseFloat(
+                                                                    impactMatch.points_per_match_without ||
+                                                                        '0'
+                                                                ).toFixed(2)}{' '}
+                                                                sans
+                                                            </p>
+                                                        )}
+                                                        {absenceImpact && (
+                                                            <p>
+                                                                Note équipe:{' '}
+                                                                {parseFloat(
+                                                                    absenceImpact.rating_with ||
+                                                                        '0'
+                                                                ).toFixed(2)}{' '}
+                                                                avec vs{' '}
+                                                                {parseFloat(
+                                                                    absenceImpact.rating_without ||
+                                                                        '0'
+                                                                ).toFixed(2)}{' '}
+                                                                sans (
+                                                                {parseFloat(
+                                                                    absenceImpact.impact_points ||
+                                                                        '0'
+                                                                ).toFixed(2)}{' '}
+                                                                pts)
+                                                            </p>
+                                                        )}
+                                                        {combos.length > 0 && (
+                                                            <div>
+                                                                <p className="text-slate-400">
+                                                                    Combos les plus performants
+                                                                </p>
+                                                                <ul className="mt-1 space-y-1">
+                                                                    {combos.map((c, idx) => (
+                                                                        <li
+                                                                            key={
+                                                                                c.combo ||
+                                                                                idx
+                                                                            }
+                                                                        >
+                                                                            <span className="text-slate-300">
+                                                                                {String(
+                                                                                    c.combo ||
+                                                                                        ''
+                                                                                ).replace(
+                                                                                    name,
+                                                                                    name.toUpperCase()
+                                                                                )}
+                                                                            </span>{' '}
+                                                                            –{' '}
+                                                                            <span className="tabular-nums">
+                                                                                {parseInt(
+                                                                                    c.matches ||
+                                                                                        '0',
+                                                                                    10
+                                                                                ) || 0}
+                                                                            </span>{' '}
+                                                                            matchs,{' '}
+                                                                            <span className="tabular-nums">
+                                                                                {parseFloat(
+                                                                                    c.avg_points ||
+                                                                                        c.avg_score ||
+                                                                                        '0'
+                                                                                ).toFixed(
+                                                                                    2
+                                                                                )}
+                                                                            </span>{' '}
+                                                                            pts/match
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                        {!impactScore &&
+                                                            !impactMatch &&
+                                                            !absenceImpact &&
+                                                            combos.length === 0 && (
+                                                                <p className="text-slate-500">
+                                                                    Aucun impact calculé
+                                                                    disponible pour ce joueur.
+                                                                </p>
+                                                            )}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-3">
+                            {renderRadar(selectedPlayer)}
+                            <div className="rounded-xl bg-slate-900/70 p-4">
+                                <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-2">
+                                    Évolution match par match (minutes)
+                                </p>
+                                {playerMinutesSeries.length === 0 && (
+                                    <p className="text-xs text-slate-500">
+                                        Aucune donnée minute par minute disponible pour ce
+                                        joueur.
+                                    </p>
+                                )}
+                                {playerMinutesSeries.length > 0 && (
+                                    <div className="flex h-32 items-end gap-1">
+                                        {playerMinutesSeries.map((m, idx) => {
+                                            const ratio =
+                                                maxSeriesMinutes > 0
+                                                    ? m.minutes / maxSeriesMinutes
+                                                    : 0;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="flex-1"
+                                                    title={`${m.label} • ${m.minutes} min • xG ${m.xg.toFixed(2)} • xAG ${m.xag.toFixed(2)}`}
+                                                >
+                                                    <div className="flex h-full flex-col justify-end">
+                                                        <div className="mx-auto h-full w-2 rounded-full bg-slate-800">
+                                                            <div
+                                                                className="w-full rounded-full bg-emerald-500"
+                                                                style={{
+                                                                    height: `${Math.max(
+                                                                        ratio * 100,
+                                                                        3
+                                                                    )}%`
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     <div className="flex flex-wrap gap-3 rounded-xl bg-slate-900/60 p-4">
                         <div className="flex flex-col text-sm text-slate-200">
                             <label className="mb-1 text-xs text-slate-400">
@@ -1612,46 +2350,104 @@
                                     <th>Temps de Jeu (min)</th>
                                     <th>Note</th>
                                     <th>Importance</th>
+                                    <th>Buts / Passes</th>
+                                    <th>Stat poste 1</th>
+                                    <th>Stat poste 2</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map(player => (
-                                    <tr
-                                        key={player.name}
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => handleRowClick(player)}
-                                    >
-                                        <td>{player.name}</td>
-                                        <td>{player.pos}</td>
-                                        <td>{player.minutes.toLocaleString('fr-FR')}</td>
-                                        <td>{player.rating.toFixed(1)}</td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <span>
-                                                    {player.importance.toFixed(2)}
-                                                </span>
-                                                {maxMinutes > 0 && (
-                                                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
-                                                        <div
-                                                            className="h-full rounded-full bg-emerald-500"
-                                                            style={{
-                                                                width: `${Math.min(
-                                                                    (player.minutes /
-                                                                        maxMinutes) *
-                                                                        100,
-                                                                    100
-                                                                )}%`
-                                                            }}
-                                                        />
+                                {filtered.map(player => {
+                                    const metrics = buildPositionMetrics(player);
+                                    return (
+                                        <tr
+                                            key={player.name}
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={() => handleRowClick(player)}
+                                        >
+                                            <td>{player.name}</td>
+                                            <td>{player.pos}</td>
+                                            <td>
+                                                {player.minutes.toLocaleString('fr-FR')}
+                                            </td>
+                                            <td>{player.rating.toFixed(1)}</td>
+                                            <td>
+                                                <div className="flex items-center gap-2">
+                                                    <span>
+                                                        {player.importance.toFixed(2)}
+                                                    </span>
+                                                    {maxMinutes > 0 && (
+                                                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
+                                                            <div
+                                                                className="h-full rounded-full bg-emerald-500"
+                                                                style={{
+                                                                    width: `${Math.min(
+                                                                        (player.minutes /
+                                                                            maxMinutes) *
+                                                                            100,
+                                                                        100
+                                                                    )}%`
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-emerald-400">
+                                                        ⚽ {player.goals}
+                                                    </span>
+                                                    <span className="text-sky-400">
+                                                        🎯 {player.assists}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {metrics[0] && (
+                                                    <div className="flex items-center gap-2 text-xs">
+                                                        <span>{metrics[0].icon}</span>
+                                                        <span className="text-slate-400">
+                                                            {metrics[0].label}
+                                                        </span>
+                                                        <span className="tabular-nums">
+                                                            {typeof metrics[0].decimals ===
+                                                            'number'
+                                                                ? metrics[0].value.toFixed(
+                                                                      metrics[0].decimals
+                                                                  )
+                                                                : metrics[0].value.toLocaleString(
+                                                                      'fr-FR'
+                                                                  )}
+                                                        </span>
                                                     </div>
                                                 )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td>
+                                                {metrics[1] && (
+                                                    <div className="flex items-center gap-2 text-xs">
+                                                        <span>{metrics[1].icon}</span>
+                                                        <span className="text-slate-400">
+                                                            {metrics[1].label}
+                                                        </span>
+                                                        <span className="tabular-nums">
+                                                            {typeof metrics[1].decimals ===
+                                                            'number'
+                                                                ? metrics[1].value.toFixed(
+                                                                      metrics[1].decimals
+                                                                  )
+                                                                : metrics[1].value.toLocaleString(
+                                                                      'fr-FR'
+                                                                  )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="loading">
+                                        <td colSpan="8" className="loading">
                                             Aucun joueur ne correspond aux filtres
                                         </td>
                                     </tr>
@@ -1667,12 +2463,17 @@
             const a = useCsvData('data/processed/ol_mercato.csv');
             const b = useCsvData('data/processed/ol_transfers_official.csv');
             const c = useCsvData('data/processed/ol_news.csv');
-            const loading = a.loading || b.loading || c.loading;
-            const error = a.error || b.error || c.error;
+            const s = useCsvData('data/processed/ol_squad_transfermarkt.csv');
+            const loading = a.loading || b.loading || c.loading || s.loading;
+            const error = a.error || b.error || c.error || s.error;
             const rows = a.rows || [];
             const transfersRows = b.rows || [];
             const newsRows = c.rows || [];
+            const squadRows = s.rows || [];
             const [seasonFilter, setSeasonFilter] = useState('current');
+            const [windowFilter, setWindowFilter] = useState('all');
+            const [loanFilter, setLoanFilter] = useState('all');
+            const [sortMode, setSortMode] = useState('date_desc');
 
             if (loading) {
                 return (
@@ -1704,17 +2505,87 @@
                 source: r.source || "L'Equipe"
             }));
 
-            const olfrOfficials = (transfersRows || []).map(r => ({
-                date: r.date || '',
-                headline: r.headline || '',
-                category: 'official',
-                direction: (r.direction || 'unknown').toLowerCase(),
-                url: r.url || '',
-                source: r.source || 'Transfermarkt',
-                fee: r.fee || ''
-            }));
             const eqOfficials = mercatos.filter(m => m.category === 'official');
-            const officialData = olfrOfficials.length > 0 ? olfrOfficials : eqOfficials;
+            const eqByKey = new Map();
+            eqOfficials.forEach(o => {
+                const key = o.url || o.headline || '';
+                if (key && !eqByKey.has(key)) {
+                    eqByKey.set(key, o);
+                }
+            });
+
+            const squadById = new Map();
+            (squadRows || []).forEach(r => {
+                const id = String(r.id || '').trim();
+                const name = r.name || '';
+                const position = r.position || '';
+                const joinedOn = r.joinedOn || '';
+                if (id && name && !squadById.has(id)) {
+                    squadById.set(id, { name, position, joinedOn });
+                }
+            });
+
+            const extractPlayerIdFromUrl = (url) => {
+                if (!url) return '';
+                const m = String(url).match(/spieler\/(\d+)/);
+                return m ? m[1] : '';
+            };
+
+            const officialData = (transfersRows || []).map(r => {
+                const url = r.url || '';
+                const id = extractPlayerIdFromUrl(url);
+                const squadInfo = id && squadById.has(id) ? squadById.get(id) : null;
+                const playerName = squadInfo ? squadInfo.name : '';
+                const playerPosition = squadInfo ? squadInfo.position : '';
+                const key = url || (playerName || r.headline || '');
+
+                let date = r.date || '';
+                if (!date && key && eqByKey.has(key)) {
+                    const eq = eqByKey.get(key);
+                    if (eq && eq.date) {
+                        date = eq.date;
+                    }
+                }
+                if (!date && squadInfo && squadInfo.joinedOn) {
+                    date = squadInfo.joinedOn;
+                }
+
+                return {
+                    date,
+                    headline: playerName || r.headline || '',
+                    playerName: playerName || '',
+                    position: playerPosition,
+                    category: 'official',
+                    direction: (r.direction || 'unknown').toLowerCase(),
+                    url,
+                    source: r.source || 'Transfermarkt',
+                    fee: r.fee || ''
+                };
+            });
+            const officialKeySet = new Set(
+                officialData
+                    .map(o => o.url || o.headline || '')
+                    .filter(k => k)
+            );
+            const extraOfficials = eqOfficials
+                .filter(o => {
+                    const key = o.url || o.headline || '';
+                    if (!key) return true;
+                    return !officialKeySet.has(key);
+                })
+                .map(o => ({
+                    date: o.date || '',
+                    headline: o.headline || '',
+                    category: 'official',
+                    direction: (o.direction || 'unknown').toLowerCase(),
+                    url: o.url || '',
+                    source: o.source || "L'Equipe",
+                    fee: '',
+                    position: ''
+                }));
+
+            const combinedOfficialData = [...officialData, ...extraOfficials];
+
             const toSeason = (dStr) => {
                 if (!dStr) return '';
                 const d = new Date(dStr);
@@ -1725,8 +2596,58 @@
                 const endShort = String((start + 1) % 100).padStart(2, '0');
                 return `${start}-${endShort}`;
             };
+
+            const getWindow = (dStr) => {
+                if (!dStr) return '';
+                const d = new Date(dStr);
+                if (isNaN(d.getTime())) return '';
+                const m = d.getUTCMonth() + 1;
+                if (m === 1) return 'winter';
+                if (m >= 7 && m <= 9) return 'summer';
+                return '';
+            };
+
+            const isLoanTransfer = (fee) => {
+                if (!fee) return false;
+                const f = String(fee).toLowerCase();
+                if (f.includes('end of loan')) return false;
+                return f.includes('loan');
+            };
+
+            const parseFeeValue = (fee) => {
+                if (!fee) return 0;
+                const lower = String(fee).toLowerCase();
+                if (lower.includes('free')) return 0;
+                if (lower === '-' || lower.includes('end of loan')) return 0;
+                const cleaned = fee.replace(/,/g, '');
+                const match = cleaned.match(/([0-9]+(?:\.[0-9]+)?)\s*([mk]?)/i);
+                if (!match) return 0;
+                let value = parseFloat(match[1]);
+                const unit = match[2].toLowerCase();
+                if (unit === 'm') value *= 1000000;
+                else if (unit === 'k') value *= 1000;
+                if (!Number.isFinite(value)) return 0;
+                return value;
+            };
+
+            const translatePosition = (position) => {
+                const p = String(position || '').toLowerCase();
+                if (p === 'goalkeeper') return 'Gardien de but';
+                if (p === 'centre-back' || p === 'center-back') return 'Défenseur central';
+                if (p === 'left-back') return 'Arrière gauche';
+                if (p === 'right-back') return 'Arrière droit';
+                if (p === 'defensive midfield') return 'Milieu défensif';
+                if (p === 'central midfield') return 'Milieu central';
+                if (p === 'attacking midfield') return 'Milieu offensif';
+                if (p === 'left winger') return 'Ailier gauche';
+                if (p === 'right winger') return 'Ailier droit';
+                if (p === 'centre-forward' || p === 'center-forward') return 'Avant-centre';
+                if (p === 'second striker') return 'Second attaquant';
+                return position || '';
+            };
+
             const seasonsSet = new Set(
-                officialData
+                combinedOfficialData
                     .map(o => toSeason(o.date))
                     .filter(s => s)
             );
@@ -1735,6 +2656,7 @@
             const currentStart = (now.getUTCMonth() + 1) >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
             const currentLabel = `${currentStart}-${String((currentStart + 1) % 100).padStart(2, '0')}`;
             const effectiveSeason = seasonFilter === 'current' ? currentLabel : seasonFilter;
+
             const applySeasonFilter = (arr) => {
                 if (!effectiveSeason) return arr;
                 return arr.filter(o => {
@@ -1743,10 +2665,52 @@
                     return seasonFilter === 'current';
                 });
             };
-            const officialIn = officialData.filter(m => m.direction === 'in');
-            const officialOut = officialData.filter(m => m.direction === 'out');
-            const officialInFiltered = applySeasonFilter(officialIn).sort((a,b) => (b.date||'').localeCompare(a.date||''));
-            const officialOutFiltered = applySeasonFilter(officialOut).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+            const applyWindowFilter = (arr) => {
+                if (windowFilter === 'all') return arr;
+                return arr.filter(o => {
+                    const w = getWindow(o.date);
+                    if (!w) return windowFilter === 'all';
+                    return w === windowFilter;
+                });
+            };
+
+            const applyLoanFilter = (arr) => {
+                if (loanFilter === 'all') return arr;
+                return arr.filter(o => {
+                    const isLoan = isLoanTransfer(o.fee);
+                    if (loanFilter === 'loans_only') return isLoan;
+                    if (loanFilter === 'no_loans') return !isLoan;
+                    return true;
+                });
+            };
+
+            const sortOfficial = (arr) => {
+                const copy = [...arr];
+                if (sortMode === 'fee_desc') {
+                    return copy.sort((a, b) => parseFeeValue(b.fee) - parseFeeValue(a.fee));
+                }
+                if (sortMode === 'fee_asc') {
+                    return copy.sort((a, b) => parseFeeValue(a.fee) - parseFeeValue(b.fee));
+                }
+                return copy.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            };
+
+            const filterOfficial = (arr) => {
+                return sortOfficial(
+                    applyLoanFilter(
+                        applyWindowFilter(
+                            applySeasonFilter(arr)
+                        )
+                    )
+                );
+            };
+
+            const officialIn = combinedOfficialData.filter(m => m.direction === 'in');
+            const officialOut = combinedOfficialData.filter(m => m.direction === 'out');
+            const officialInFiltered = filterOfficial(officialIn);
+            const officialOutFiltered = filterOfficial(officialOut);
+            const officialAllFiltered = filterOfficial(combinedOfficialData);
             const rumors = mercatos.filter(m => m.category !== 'official');
             const news = (newsRows || []).map(r => ({
                 date: r.date || '',
@@ -1754,8 +2718,8 @@
                 url: r.url || '',
                 source: r.source || 'O&L'
             }));
-            const hasAny = officialInFiltered.length + officialOutFiltered.length + rumors.length + news.length > 0;
-            const officialSourceLabel = officialData.length > 0 ? officialData[0].source : 'Transfermarkt';
+            const hasAny = officialAllFiltered.length + rumors.length + news.length > 0;
+            const officialSourceLabel = combinedOfficialData.length > 0 ? combinedOfficialData[0].source : 'Transfermarkt';
 
             const renderItem = m => {
                 const dateLabel = m.date ? formatDate(m.date) : '';
@@ -1778,7 +2742,7 @@
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-col">
                                 <span className="text-[11px] text-slate-300">
-                                    {dateLabel || 'Date inconnue'}
+                                    {dateLabel || ''}
                                 </span>
                                 <span className="text-[11px] text-slate-400">
                                     {categoryLabel}
@@ -1826,50 +2790,254 @@
                 );
             }
 
+            const officialTimeline = officialAllFiltered
+                .slice()
+                .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+            const formatAmountShort = (value) => {
+                const v = Number(value) || 0;
+                if (v === 0) return '';
+                if (v >= 1000000) {
+                    return (v / 1000000).toFixed(2) + ' M€';
+                }
+                if (v >= 1000) {
+                    return (v / 1000).toFixed(1) + ' k€';
+                }
+                return Math.round(v).toLocaleString('fr-FR') + ' €';
+            };
+
+            const officialAllWithParsed = officialAllFiltered.map(o => {
+                const amount = parseFeeValue(o.fee);
+                return { ...o, amount };
+            });
+
+            const officialInWithParsed = officialInFiltered.map(o => {
+                const amount = parseFeeValue(o.fee);
+                return { ...o, amount };
+            });
+
+            const officialOutWithParsed = officialOutFiltered.map(o => {
+                const amount = parseFeeValue(o.fee);
+                return { ...o, amount };
+            });
+
             return (
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 rounded-xl bg-slate-900/70 p-4">
-                        <label className="text-xs text-slate-300">Saison</label>
-                        <select
-                            className="bg-slate-800 border border-slate-700 text-xs text-slate-100 rounded-md px-2 py-1"
-                            value={seasonFilter}
-                            onChange={e => setSeasonFilter(e.target.value)}
-                        >
-                            <option value="current">Courante ({currentLabel})</option>
-                            {seasons.map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                            <option value="">Toutes</option>
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div className="rounded-xl bg-slate-900/70 p-4">
-                            <h3 className="text-sm font-semibold text-slate-100">
-                                Arrivées officielles ({officialSourceLabel})
-                            </h3>
-                            <ul className="mt-3 space-y-2">
-                                {officialInFiltered.length > 0 ? (
-                                    officialInFiltered.map(renderItem)
-                                ) : (
-                                    <li className="text-xs text-slate-400">
-                                        Aucune arrivée officielle détectée.
-                                    </li>
-                                )}
-                            </ul>
+                    <div className="rounded-xl bg-slate-900/70 p-4">
+                        <h3 className="text-sm font-semibold text-slate-100">
+                            Chronologie du mercato OL ({officialSourceLabel})
+                        </h3>
+                        <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+                            {officialTimeline.map(m => {
+                                const dateLabel = m.date ? formatDate(m.date) : '';
+                                const directionShort =
+                                    m.direction === 'in'
+                                        ? 'Arrivée'
+                                        : m.direction === 'out'
+                                        ? 'Départ'
+                                        : '';
+                                const w = getWindow(m.date);
+                                const windowLabel =
+                                    w === 'summer' ? 'Été' : w === 'winter' ? 'Hiver' : '';
+                                const isLoan = isLoanTransfer(m.fee);
+                                const typeLabel = isLoan ? 'Prêt' : 'Transfert';
+                                const amountValue = parseFeeValue(m.fee);
+                                const amountShort = formatAmountShort(amountValue);
+                                const cardStatusClass =
+                                    m.direction === 'out'
+                                        ? 'border-red-500/60 bg-red-900/40'
+                                        : 'border-slate-700 bg-slate-900/80';
+                                return (
+                                    <div
+                                        key={m.url || m.headline + m.date + m.direction}
+                                        className={`min-w-[190px] rounded-lg border px-3 py-2 text-xs ${cardStatusClass}`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-slate-100">
+                                                    {directionShort || 'Mouvement'}
+                                                </span>
+                                                {windowLabel && (
+                                                    <span className="text-[10px] text-slate-300">
+                                                        {windowLabel}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-[10px] text-slate-200">
+                                                {dateLabel}
+                                            </span>
+                                        </div>
+                                        <div className="mt-1 text-[11px] text-slate-100">
+                                            {m.headline || m.url || 'Transfert'}
+                                        </div>
+                                        <div className="mt-1 flex items-center justify-between text-[10px] text-slate-200">
+                                            <span>
+                                                {typeLabel}
+                                                {isLoan ? '' : amountShort ? ' · ' + amountShort : ''}
+                                            </span>
+                                            <span className="text-slate-400">
+                                                {m.source || ''}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {officialTimeline.length === 0 && (
+                                <div className="text-xs text-slate-400">
+                                    Aucun mouvement officiel pour les filtres sélectionnés.
+                                </div>
+                            )}
                         </div>
-                        <div className="rounded-xl bg-slate-900/70 p-4">
-                            <h3 className="text-sm font-semibold text-slate-100">
-                                Départs officiels ({officialSourceLabel})
+                    </div>
+                    <div className="flex flex-wrap gap-3 rounded-xl bg-slate-900/70 p-4">
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Saison</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={seasonFilter}
+                                onChange={e => setSeasonFilter(e.target.value)}
+                            >
+                                <option value="current">Courante ({currentLabel})</option>
+                                {seasons.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                                <option value="">Toutes</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Fenêtre</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={windowFilter}
+                                onChange={e => setWindowFilter(e.target.value)}
+                            >
+                                <option value="all">Toutes</option>
+                                <option value="summer">Été</option>
+                                <option value="winter">Hiver</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Prêts</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={loanFilter}
+                                onChange={e => setLoanFilter(e.target.value)}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="loans_only">Prêts uniquement</option>
+                                <option value="no_loans">Sans prêts</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col text-sm text-slate-200">
+                            <label className="mb-1 text-xs text-slate-400">Tri</label>
+                            <select
+                                className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs"
+                                value={sortMode}
+                                onChange={e => setSortMode(e.target.value)}
+                            >
+                                <option value="date_desc">Date décroissante</option>
+                                <option value="fee_desc">Prix décroissant</option>
+                                <option value="fee_asc">Prix croissant</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div className="table-container">
+                            <h3 className="text-sm font-semibold text-slate-100 mb-2">
+                                Arrivées officielles
                             </h3>
-                            <ul className="mt-3 space-y-2">
-                                {officialOutFiltered.length > 0 ? (
-                                    officialOutFiltered.map(renderItem)
-                                ) : (
-                                    <li className="text-xs text-slate-400">
-                                        Aucun départ officiel détecté.
-                                    </li>
-                                )}
-                            </ul>
+                            <table id="mercato-in-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Libellé</th>
+                                        <th>Poste</th>
+                                        <th>Type</th>
+                                        <th>Montant (approx.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {officialInWithParsed.map(m => {
+                                        const dateLabel = m.date ? formatDate(m.date) : '';
+                                        const isLoan = isLoanTransfer(m.fee);
+                                        const typeLabel = isLoan ? 'Prêt' : 'Transfert';
+                                        const amountShort = formatAmountShort(m.amount);
+                                        return (
+                                            <tr
+                                                key={
+                                                    'in-' +
+                                                    (m.url ||
+                                                        m.headline +
+                                                            m.date +
+                                                            (m.source || ''))
+                                                }
+                                            >
+                                                <td>{dateLabel}</td>
+                                                <td>{m.headline || m.url || 'Transfert'}</td>
+                                                <td>{translatePosition(m.position)}</td>
+                                                <td>{typeLabel}</td>
+                                                <td>{amountShort || m.fee || '-'}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {officialInWithParsed.length === 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="loading">
+                                                Aucune arrivée ne correspond aux filtres
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="table-container">
+                            <h3 className="text-sm font-semibold text-slate-100 mb-2">
+                                Départs officiels
+                            </h3>
+                            <table id="mercato-out-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Libellé</th>
+                                        <th>Poste</th>
+                                        <th>Type</th>
+                                        <th>Montant (approx.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-red-300">
+                                    {officialOutWithParsed.map(m => {
+                                        const dateLabel = m.date ? formatDate(m.date) : '';
+                                        const isLoan = isLoanTransfer(m.fee);
+                                        const typeLabel = isLoan ? 'Prêt' : 'Transfert';
+                                        const amountShort = formatAmountShort(m.amount);
+                                        return (
+                                            <tr
+                                                className="border border-red-500/60 bg-red-900/20"
+                                                key={
+                                                    'out-' +
+                                                    (m.url ||
+                                                        m.headline +
+                                                            m.date +
+                                                            (m.source || ''))
+                                                }
+                                            >
+                                                <td>{dateLabel}</td>
+                                                <td>{m.headline || m.url || 'Transfert'}</td>
+                                                <td>{translatePosition(m.position)}</td>
+                                                <td>{typeLabel}</td>
+                                                <td>{amountShort || m.fee || '-'}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {officialOutWithParsed.length === 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="loading">
+                                                Aucun départ ne correspond aux filtres
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
@@ -1914,11 +3082,11 @@
                 url: r.url || '',
                 source: r.source || 'O&L'
             }));
-            const renderItem = a => {
+            const renderItem = (a, idx) => {
                 const dateLabel = a.date ? formatDate(a.date) : '';
                 return (
                     <li
-                        key={a.url || a.headline}
+                        key={`${a.url || a.headline || 'item'}-${idx}`}
                         className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs"
                     >
                         <div className="flex items-center justify-between gap-2">
@@ -1939,7 +3107,7 @@
                         <h3 className="text-sm font-semibold text-slate-100">Actualités OL (O&L)</h3>
                         <ul className="mt-3 space-y-2">
                             {articles.length > 0 ? (
-                                articles.map(renderItem)
+                                articles.map((a, idx) => renderItem(a, idx))
                             ) : (
                                 <li className="text-xs text-slate-400">Aucune actualité disponible.</li>
                             )}
@@ -2542,11 +3710,6 @@
         const matchesRoot = document.getElementById('matches-react-root');
         if (matchesRoot && window.ReactDOM && ReactDOM.createRoot) {
             ReactDOM.createRoot(matchesRoot).render(<MatchesReactTableByRound />);
-        }
-
-        const playersRoot = document.getElementById('players-react-root');
-        if (playersRoot && window.ReactDOM && ReactDOM.createRoot) {
-            ReactDOM.createRoot(playersRoot).render(<PlayersReactTable />);
         }
 
         const mercatoRoot = document.getElementById('mercato-react-root');

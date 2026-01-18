@@ -15,30 +15,28 @@ import math
 class MatchContext:
     opponent: str
     is_home: bool
-    # Absences
     key_absences_count: int
     key_absences_impact: float
-    # Forme récente (PPM)
     ppm_last_5: float
     ppm_last_10: float
     opp_ppm_last_5: float
     opp_ppm_last_10: float
-    # Classement
     ol_rank: int
     opp_rank: int
     ol_home_rank: int
     ol_away_rank: int
     opp_home_rank: int
     opp_away_rank: int
-    # Historique confrontations directes
     h2h_win_rate_5: float
     h2h_loss_rate_5: float
     h2h_matches_5: int
-    # Adversaire vs équipes fortes
     opp_vs_top_teams_ppm: float
     league_ppm_top_threshold: float
-    # Force de la composition (net LineupImpact normalisé entre -1 et +1)
     lineup_strength_score: float = 0.0
+    understat_xg_diff: float = 0.0
+    understat_shots_diff: float = 0.0
+    understat_field_tilt_diff: float = 0.0
+    similarity_score: float = 0.0
 
 
 def _clamp(value: float, min_value: float = -1.0, max_value: float = 1.0) -> float:
@@ -100,26 +98,42 @@ def score_lineup(ctx: MatchContext) -> float:
     return _clamp(ctx.lineup_strength_score)
 
 
+def score_tactics(ctx: MatchContext) -> float:
+    xg_component = ctx.understat_xg_diff / 1.5
+    shots_component = ctx.understat_shots_diff / 6.0
+    tilt_component = ctx.understat_field_tilt_diff
+    raw = (xg_component + shots_component + tilt_component) / 3.0
+    return _clamp(raw)
+
+
+def score_similarity(ctx: MatchContext) -> float:
+    return _clamp(ctx.similarity_score)
+
+
 def compute_dynamic_weights(absence_score: float) -> Dict[str, float]:
     if absence_score < -0.4:
         weights = {
-            "absences": 0.4,
-            "form": 0.18,
-            "home_away": 0.1,
-            "standings": 0.14,
+            "absences": 0.35,
+            "form": 0.16,
+            "home_away": 0.08,
+            "standings": 0.11,
             "h2h": 0.04,
             "opp_vs_strong": 0.04,
-            "lineup": 0.1,
+            "lineup": 0.08,
+            "tactics": 0.08,
+            "similarity": 0.06,
         }
     else:
         weights = {
-            "absences": 0.18,
-            "form": 0.27,
-            "home_away": 0.18,
-            "standings": 0.14,
-            "h2h": 0.09,
+            "absences": 0.16,
+            "form": 0.25,
+            "home_away": 0.14,
+            "standings": 0.12,
+            "h2h": 0.08,
             "opp_vs_strong": 0.04,
-            "lineup": 0.1,
+            "lineup": 0.08,
+            "tactics": 0.09,
+            "similarity": 0.04,
         }
     return weights
 
@@ -192,6 +206,16 @@ def explain_scores(ctx: MatchContext, scores: Dict[str, float], weights: Dict[st
         reasons.append("Onze fortement affaibli par les rotations ou absences majeures.")
     elif lineup_score <= -0.15:
         reasons.append("Onze légèrement affaibli par rapport au meilleur potentiel.")
+    tactics_score = scores.get("tactics", 0.0)
+    if tactics_score >= 0.25:
+        reasons.append("Profil tactique Understat globalement favorable à l’OL.")
+    elif tactics_score <= -0.25:
+        reasons.append("Profil tactique Understat plutôt favorable à l’adversaire.")
+    similarity_score = scores.get("similarity", 0.0)
+    if similarity_score >= 0.25:
+        reasons.append("L’OL performe bien contre des équipes au profil tactique similaire.")
+    elif similarity_score <= -0.25:
+        reasons.append("Les équipes au profil tactique proche de cet adversaire posent historiquement des difficultés à l’OL.")
     if weights["absences"] > weights["form"]:
         reasons.append("Les absences sont pondérées comme facteur principal dans ce contexte.")
     else:
@@ -208,6 +232,8 @@ def compute_match_prediction(ctx: MatchContext) -> Dict[str, Any]:
         "h2h": score_h2h(ctx),
         "opp_vs_strong": score_opponent_vs_strong(ctx),
         "lineup": score_lineup(ctx),
+        "tactics": score_tactics(ctx),
+        "similarity": score_similarity(ctx),
     }
     absence_score = scores["absences"]
     weights = compute_dynamic_weights(absence_score)

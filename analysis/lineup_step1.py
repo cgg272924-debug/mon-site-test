@@ -37,12 +37,16 @@ players["match_key"] = (
 # ------------------------
 # KEEP USEFUL COLUMNS
 # ------------------------
-players = players[[
+cols = [
     "match_key",
     "player",
     "pos",
-    "minutes_played"
-]]
+    "minutes_played",
+]
+if "pos_fr" in players.columns:
+    cols.append("pos_fr")
+
+players = players[cols]
 
 # ------------------------
 # SAVE
