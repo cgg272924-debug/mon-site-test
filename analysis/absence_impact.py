@@ -42,7 +42,19 @@ injuries_out_path = DATA_DIR / "ol_injuries.csv"
 if injuries_raw_path.exists():
     df_inj_raw = pd.read_csv(injuries_raw_path)
     records = []
-    today_str = dt.date.today().isoformat()
+    today = dt.date.today()
+    today_str = today.isoformat()
+
+    minutes_path = DATA_DIR / "ol_player_minutes.csv"
+    minutes_by_player = {}
+    max_minutes = 0.0
+    if minutes_path.exists():
+        df_minutes = pd.read_csv(minutes_path)
+        if "player" in df_minutes.columns and "minutes_played" in df_minutes.columns:
+            grouped_minutes = df_minutes.groupby("player")["minutes_played"].sum()
+            minutes_by_player = grouped_minutes.to_dict()
+            if not grouped_minutes.empty:
+                max_minutes = float(grouped_minutes.max())
 
     for _, r in df_inj_raw.iterrows():
         player = str(r.get("player", "")).strip()
@@ -81,12 +93,25 @@ if injuries_raw_path.exists():
             est_return = start_date + dt.timedelta(days=est_days)
             est_return_str = est_return.isoformat()
         else:
+            est_return = None
             est_return_str = ""
 
         impact_row = df_impact[df_impact["player"] == player]
         importance = None
         if not impact_row.empty:
             importance = float(impact_row["impact_points"].iloc[0])
+        else:
+            minutes_total = float(minutes_by_player.get(player, 0.0))
+            if max_minutes > 0.0 and minutes_total > 0.0:
+                importance = minutes_total / max_minutes
+
+        if est_return is not None:
+            if est_return >= today:
+                status = "out"
+            else:
+                status = "expected_back"
+        else:
+            status = "doubtful"
 
         records.append({
             "team": r.get("team", "Olympique Lyonnais"),
@@ -98,11 +123,33 @@ if injuries_raw_path.exists():
             "estimated_return_date": est_return_str,
             "estimated_days": est_days,
             "importance_score": importance,
+            "status": status,
             "source": r.get("source", ""),
             "last_updated": today_str,
         })
 
     df_injuries = pd.DataFrame(records)
+    if not df_injuries.empty:
+        df_injuries["importance_score"] = pd.to_numeric(df_injuries["importance_score"], errors="coerce")
+        raw_importance = df_injuries["importance_score"]
+
+        if raw_importance.notna().any():
+            default_value = float(raw_importance[raw_importance.notna()].median())
+        else:
+            default_value = 0.0
+
+        raw_importance = raw_importance.fillna(default_value)
+
+        min_val = float(raw_importance.min())
+        max_val = float(raw_importance.max())
+
+        if max_val == min_val:
+            normalized = pd.Series([2.5] * len(raw_importance), index=raw_importance.index)
+        else:
+            normalized = 5.0 * (raw_importance - min_val) / (max_val - min_val)
+
+        df_injuries["importance_score"] = normalized.round(2)
+
     df_injuries.to_csv(injuries_out_path, index=False)
     print(f"Fichier créé : {injuries_out_path}")
 else:

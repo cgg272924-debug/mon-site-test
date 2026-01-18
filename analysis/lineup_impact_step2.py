@@ -26,12 +26,6 @@ summary = (
 )
 
 # =====================
-# FILTRE MINIMUM DE MATCHS
-# =====================
-
-summary = summary[summary["matches"] >= 3]
-
-# =====================
 # TRI PAR PERFORMANCE
 # =====================
 
@@ -44,9 +38,12 @@ summary = summary.sort_values(
 # SAUVEGARDE
 # =====================
 
-output = "data/processed/ol_lineup_impact_summary.csv"
-summary.to_csv(output, index=False)
+output_summary = "data/processed/ol_lineup_impact_summary.csv"
+summary.to_csv(output_summary, index=False)
+
+output_impact = "data/processed/ol_lineup_impact.csv"
+summary.to_csv(output_impact, index=False)
 
 print("Combinaisons retenues :", summary.shape[0])
-print(f"📁 Fichier créé : {output}")
+print(f"📁 Fichiers créés : {output_summary} et {output_impact}")
 print("=== ETAPE 2 TERMINÉE ===")

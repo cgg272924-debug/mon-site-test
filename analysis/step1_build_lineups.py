@@ -6,25 +6,44 @@ players = pd.read_csv("data/processed/ol_players_with_match_key.csv")
 
 print("Joueurs chargés :", players.shape)
 
-# On garde uniquement les joueurs ayant joué
 players = players[players["minutes_played"] > 0]
 
-# Construction lineup par match
-lineups = (
-    players
-    .groupby("match_key")["player"]
+cols_lineups_by_match = [
+    "match_key",
+    "player",
+    "pos",
+    "age",
+    "minutes_played",
+    "goals",
+    "assists",
+    "xg",
+    "xag",
+]
+existing_cols = [c for c in cols_lineups_by_match if c in players.columns]
+
+lineups_long = players[existing_cols].copy()
+
+lineups_long.to_csv(
+    "data/processed/ol_lineups_by_match.csv",
+    index=False,
+)
+
+print("Lineups par match créées :", lineups_long.shape)
+print("📁 Fichier créé : data/processed/ol_lineups_by_match.csv")
+
+agg = (
+    lineups_long.groupby("match_key")["player"]
     .apply(lambda x: sorted(set(x)))
     .reset_index()
 )
+agg["size"] = agg["player"].apply(len)
+agg = agg.rename(columns={"player": "players"})
 
-lineups["size"] = lineups["player"].apply(len)
-lineups.rename(columns={"player": "players"}, inplace=True)
-
-lineups.to_csv(
+agg.to_csv(
     "data/processed/ol_match_lineups.csv",
-    index=False
+    index=False,
 )
 
-print("Lineups créées :", lineups.shape)
+print("Lineups agrégées créées :", agg.shape)
 print("📁 Fichier créé : data/processed/ol_match_lineups.csv")
 print("=== STEP 1 TERMINÉ ===")
