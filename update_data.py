@@ -694,6 +694,9 @@ def main() -> None:
             "analysis/step3_analyze_combos.py",
             "analysis/analyze_best_combos.py",
             "analysis/stepA_create_league1_standings.py",
+            "scraping/get_league1_standings_home_away.py",
+            "scraping/ol_injuries_transfermarkt.py",
+            "analysis/absence_impact.py",
         ]
         scripts_scraping_soccerdata = [
             "scraping/soccerdata_ligue1.py",
