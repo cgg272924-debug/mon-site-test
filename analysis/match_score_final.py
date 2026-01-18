@@ -54,5 +54,5 @@ OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 df_final.to_csv(OUTPUT_PATH, index=False)
 
 print(f"Matchs traités : {len(df_final)}")
-print(f"📁 Fichier créé : {OUTPUT_PATH}")
+print(f"Fichier créé : {OUTPUT_PATH}")
 print("=== SCRIPT TERMINE AVEC SUCCES ===")

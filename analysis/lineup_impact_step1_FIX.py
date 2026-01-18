@@ -29,5 +29,5 @@ print("Lignes finales :", df.shape)
 output = "data/processed/ol_lineups_with_results.csv"
 df.to_csv(output, index=False)
 
-print(f"📁 Fichier créé : {output}")
+print(f"Fichier créé : {output}")
 print("=== ETAPE 1 FIX TERMINÉE ===")

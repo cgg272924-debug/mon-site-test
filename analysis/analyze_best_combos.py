@@ -38,7 +38,7 @@ for size in range(2, 12):
     ].copy()
 
     if subset.empty:
-        print(f"⏭️  Taille {size} — aucun combo valide")
+        print(f"Taille {size} — aucun combo valide")
         continue
 
     subset = subset.sort_values(
@@ -50,7 +50,7 @@ for size in range(2, 12):
     output_file = output_dir / f"ol_best_combos_{size}_players.csv"
     subset.to_csv(output_file, index=False, encoding="utf-8-sig")
 
-    print(f"✅ Taille {size} joueurs → {len(subset)} combos sauvegardés")
+    print(f"Taille {size} joueurs → {len(subset)} combos sauvegardés")
 
     subset["combo_size"] = size
     all_results.append(subset)
@@ -63,8 +63,8 @@ if all_results:
     global_output = "data/processed/ol_best_combos_ALL_3_to_11.csv"
     global_df.to_csv(global_output, index=False, encoding="utf-8-sig")
 
-    print(f"\n📁 CSV GLOBAL créé : {global_output}")
+    print(f"\nCSV GLOBAL créé : {global_output}")
 else:
-    print("\n❌ Aucun combo valide trouvé")
+    print("\nAucun combo valide trouvé")
 
 print("=== SCRIPT TERMINÉ AVEC SUCCÈS ===")

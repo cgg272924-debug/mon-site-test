@@ -42,6 +42,6 @@ os.makedirs("data/processed", exist_ok=True)
 output_path = "data/processed/match_lookup.csv"
 lookup.to_csv(output_path, index=False)
 
-print(f"📁 Fichier créé : {output_path}")
+print(f"Fichier créé : {output_path}")
 print("Lignes :", len(lookup))
 print("=== STEP 0 TERMINÉE ===")

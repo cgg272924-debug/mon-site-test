@@ -43,7 +43,7 @@ lineups_long.to_csv(
 )
 
 print("Lineups par match créées :", lineups_long.shape)
-print("📁 Fichier créé : data/processed/ol_lineups_by_match.csv")
+print("Fichier créé : data/processed/ol_lineups_by_match.csv")
 
 agg = (
     lineups_long.groupby("match_key")["player"]
@@ -59,5 +59,5 @@ agg.to_csv(
 )
 
 print("Lineups agrégées créées :", agg.shape)
-print("📁 Fichier créé : data/processed/ol_match_lineups.csv")
+print("Fichier créé : data/processed/ol_match_lineups.csv")
 print("=== STEP 1 TERMINÉ ===")

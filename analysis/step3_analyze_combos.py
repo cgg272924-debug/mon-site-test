@@ -31,5 +31,5 @@ summary.to_csv(
     index=False
 )
 
-print("📁 Fichier créé : data/processed/ol_combo_impact_summary.csv")
+print("Fichier créé : data/processed/ol_combo_impact_summary.csv")
 print("=== STEP 3 TERMINÉ ===")

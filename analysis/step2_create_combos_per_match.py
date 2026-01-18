@@ -48,5 +48,5 @@ df.to_csv(
     index=False,
 )
 
-print("📁 Fichier créé : data/processed/ol_combos_per_match.csv")
+print("Fichier créé : data/processed/ol_combos_per_match.csv")
 print("=== STEP 2 TERMINÉ ===")

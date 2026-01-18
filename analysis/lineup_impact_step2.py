@@ -45,5 +45,5 @@ output_impact = "data/processed/ol_lineup_impact.csv"
 summary.to_csv(output_impact, index=False)
 
 print("Combinaisons retenues :", summary.shape[0])
-print(f"📁 Fichiers créés : {output_summary} et {output_impact}")
+print(f"Fichiers créés : {output_summary} et {output_impact}")
 print("=== ETAPE 2 TERMINÉE ===")

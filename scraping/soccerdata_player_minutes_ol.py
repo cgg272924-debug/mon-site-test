@@ -61,5 +61,5 @@ df_ol = df_ol.rename(
 output_path = "data/processed/ol_player_minutes.csv"
 df_ol.to_csv(output_path, index=False)
 
-print(f"📁 Fichier créé : {output_path}")
+print(f"Fichier créé : {output_path}")
 print("=== SCRIPT TERMINE AVEC SUCCES ===")

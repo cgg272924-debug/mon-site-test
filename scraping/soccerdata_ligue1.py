@@ -13,6 +13,6 @@ df_matches = fbref.read_team_match_stats()
 output_path = "data/raw/ligue1_matches_raw.csv"
 df_matches.to_csv(output_path, index=False)
 
-print("✅ Fichier créé avec succès")
-print(f"📁 Chemin : {output_path}")
-print(f"📊 Nombre de lignes : {len(df_matches)}")
+print("Fichier créé avec succès")
+print(f"Chemin : {output_path}")
+print(f"Nombre de lignes : {len(df_matches)}")

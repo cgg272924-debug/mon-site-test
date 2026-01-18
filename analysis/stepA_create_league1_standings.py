@@ -57,6 +57,6 @@ standings["rank"] = standings.index + 1
 
 standings.to_csv("data/processed/league1_standings.csv", index=False)
 
-print("📁 Fichier créé : data/processed/league1_standings.csv")
+print("Fichier créé : data/processed/league1_standings.csv")
 print("\nTOP 10 :")
 print(standings.head(10))

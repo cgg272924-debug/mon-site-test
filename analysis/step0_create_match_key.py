@@ -20,7 +20,7 @@ matches_out.to_csv(
     index=False
 )
 
-print("✅ Matchs traités :", matches_out.shape)
+print("Matchs traités :", matches_out.shape)
 
 
 # ===== PLAYERS =====
@@ -47,5 +47,5 @@ players_out.to_csv(
     index=False
 )
 
-print("✅ Joueurs traités :", players_out.shape)
+print("Joueurs traités :", players_out.shape)
 print("=== STEP 0 TERMINÉ AVEC SUCCÈS ===")
